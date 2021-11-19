@@ -56,7 +56,7 @@ sleep(1);
 
 int main(){
     std::vector<int> s ={1,2};
-    std::vector<std::vector<int>> set = {{0,2},{2,5},{5,6}};
+    std::vector<std::vector<int>> set = {{0,2},{1,5},{5,6}};
     
     
     int i = 0;
