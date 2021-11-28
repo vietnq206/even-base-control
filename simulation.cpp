@@ -72,10 +72,14 @@ int main(){
 
     std::vector<int> s ={1,2};
     std::vector<std::vector<int>> set = {{0,2},{2,0}};
+
+    //Robot1 sequence of moving
     std::vector<std::vector<int>> set1 = {{0,2},{1,2},{2,2},{3,2},{3,3},{3,4},{3,5},{3,6},{3,7},{3,8},{3,9}};
+    
+    //Robot2 sequence of moving
     std::vector<std::vector<int>> set2 = {{2,0},{2,1},{2,2},{2,3},{3,3},{4,3},{5,3},{6,3},{7,3},{8,3},{9,3}};
-   // std::vector<std::vector<int>> set1 = {{1,0},{1,1},{1,2},{1,3},{2,3},{3,3},{4,3},{5,3},{6,3},{7,3},{8,3},};
-   //register at the beginning
+   
+    //register at the beginning
     robotRegister(set,mapRegistor);
     int i = 0;
     int numRobot = 2;
@@ -85,29 +89,35 @@ int main(){
     {
         //display initial location of 2 robots    
         setup(set);
-             for ( int i=0;i<SIZEX;i++){
-        for ( int j=0;j<SIZEY;j++){
-            std::cout<<mapRegistor[i][j]<<" ";
-        }
-        std::cout<<std::endl;
+        
+        // Show the register of the map
+        for ( int i=0;i<SIZEX;i++){
+            for ( int j=0;j<SIZEY;j++){
+                std::cout<<mapRegistor[i][j]<<" ";
+            }
+            std::cout<<std::endl;
         }
         std::cout << "Press Enter to Continue";
         std::cin.ignore();
-        // set of requestion move
+
+
+        // set of requesting moves
         std::vector<std::vector<int>> setAsk ;
- //       for ( int numR = 0; numR < numRobot; ++numR) setAsk.push_back()
+        
         setAsk.push_back(set1[r1Indx]);
         setAsk.push_back(set2[r2Indx]);
 
         //Robot try to registor the next location
         robotRegister(setAsk,mapRegistor);
 
+        //Robot try to get the next move
         if (askMove(0,set1[r1Indx-1],set1[r1Indx],mapRegistor)&& r1Indx<set1.size()-1) r1Indx++;
-        
         if (askMove(1,set2[r2Indx-1],set2[r2Indx],mapRegistor)&&r2Indx<set2.size()-1) r2Indx++;
 
         set[0] = set1[r1Indx-1];
         set[1] = set2[r2Indx-1];
+
+        //Rekease the register if robot move out
         releaseRegister(set,mapRegistor);
         system("CLS");
     }
