@@ -2,7 +2,8 @@
 #include<vector>
 #include<unistd.h>
 #include<stdlib.h> 
-
+#include<math.h>
+#include<fstream>
 
 #define SIZEX 10
 #define SIZEY 10
@@ -21,51 +22,104 @@ int get_location(std::vector<int> loc, std::vector<std::vector<int>> setLoc)
 }
 
 
-void setup(std::vector<std::vector<int>> location){
+void setup(std::vector<std::vector<int>> &location){
 
-int num_robot = location.size();
+    int num_robot = location.size();
 
-std::vector<int> tmp;
+    std::vector<int> tmp;
 
-for ( int i=0;i<SIZEX;i++)
-{
-    for ( int j=0;j<SIZEY;j++)
+    for ( int i=0;i<SIZEX;i++)
     {
-        tmp = {i,j};
+        for ( int j=0;j<SIZEY;j++){
+            tmp = {i,j};
 
-        if ( get_location(tmp, location) != -1)
-            std::cout<<"| "<<get_location(tmp, location)<<" |";
-        else
-            std::cout<<"|   |";
+            if ( get_location(tmp, location) != -1)
+                std::cout<<"| "<<get_location(tmp, location)<<" |";
+            else
+                std::cout<<"|   |";
+        }
+        std::cout<<std::endl;
+        for ( int j=0;j<SIZEY;j++){
+            std::cout<<"_____";
+        }
+        std::cout<<std::endl;
 
 
     }
-    std::cout<<std::endl;
+
+    sleep(1);
+
+
+    }
+
+inline int calNorm1(std::vector<int> a,std::vector<int> b){   return (abs(a[0] - b[0]) + abs(a[1]-b[1])); }
+
+void releaseRegister(std::vector<std::vector<int>> setLoc,std::vector<std::vector<int>> &mapRegister){
+    for ( int row =0; row<SIZEX ;++row){
+        for ( int col = 0; col<SIZEY ;++col ){
+            if ( mapRegister[row][col] != -1){
+                if (calNorm1(setLoc[mapRegister[row][col]],{row,col}))
+                    mapRegister[row][col] = -1;
+            }
+        }
+    }
 }
 
-sleep(1);
-
-
+void robotRegister(std::vector<std::vector<int>> askLoc,std::vector<std::vector<int>> &mapRegister){
+    for ( int rb = 0; rb < askLoc.size(); ++rb){
+        if (mapRegister[askLoc[rb][0]][askLoc[rb][1]] == -1)  mapRegister[askLoc[rb][0]][askLoc[rb][1]] = rb;
+    }
 }
 
-
-
-
-
+bool askMove(int robotName,std::vector<int> currLoc, std::vector<int> askLoc, std::vector<std::vector<int>> mapRegister){
+    if ( mapRegister[askLoc[0]][askLoc[1]] == robotName) return true;
+    else return false;
+}
 
 
 int main(){
-    std::vector<int> s ={1,2};
-    std::vector<std::vector<int>> set = {{0,2},{1,5},{5,6}};
-    
-    
-    int i = 0;
-    while( i < 9)
-    {
-        setup(set);
-        set[0][0]++;
+    std::vector<int> elmRegistor(SIZEX,-1);
+    std::vector<std::vector<int>> mapRegistor(SIZEY,elmRegistor);
 
-        i++;
+    std::vector<int> s ={1,2};
+    std::vector<std::vector<int>> set = {{0,2},{2,0}};
+    std::vector<std::vector<int>> set1 = {{0,2},{1,2},{2,2},{3,2},{3,3},{3,4},{3,5},{3,6},{3,7},{3,8},{3,9}};
+    std::vector<std::vector<int>> set2 = {{2,0},{2,1},{2,2},{2,3},{3,3},{4,3},{5,3},{6,3},{7,3},{8,3},{9,3}};
+   // std::vector<std::vector<int>> set1 = {{1,0},{1,1},{1,2},{1,3},{2,3},{3,3},{4,3},{5,3},{6,3},{7,3},{8,3},};
+   //register at the beginning
+    robotRegister(set,mapRegistor);
+    int i = 0;
+    int numRobot = 2;
+    int r1Indx = 1;
+    int r2Indx = 1;
+    while( 1)
+    {
+        //display initial location of 2 robots    
+        setup(set);
+             for ( int i=0;i<SIZEX;i++){
+        for ( int j=0;j<SIZEY;j++){
+            std::cout<<mapRegistor[i][j]<<" ";
+        }
+        std::cout<<std::endl;
+        }
+        std::cout << "Press Enter to Continue";
+        std::cin.ignore();
+        // set of requestion move
+        std::vector<std::vector<int>> setAsk ;
+ //       for ( int numR = 0; numR < numRobot; ++numR) setAsk.push_back()
+        setAsk.push_back(set1[r1Indx]);
+        setAsk.push_back(set2[r2Indx]);
+
+        //Robot try to registor the next location
+        robotRegister(setAsk,mapRegistor);
+
+        if (askMove(0,set1[r1Indx-1],set1[r1Indx],mapRegistor)&& r1Indx<set1.size()-1) r1Indx++;
+        
+        if (askMove(1,set2[r2Indx-1],set2[r2Indx],mapRegistor)&&r2Indx<set2.size()-1) r2Indx++;
+
+        set[0] = set1[r1Indx-1];
+        set[1] = set2[r2Indx-1];
+        releaseRegister(set,mapRegistor);
         system("CLS");
     }
     setup(set) ; 
