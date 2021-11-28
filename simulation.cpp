@@ -10,10 +10,8 @@
 
 
 
-int get_location(std::vector<int> loc, std::vector<std::vector<int>> setLoc)
-{
-    for( int i = 0; i<setLoc.size();i++)
-    {
+int get_location(std::vector<int> loc, std::vector<std::vector<int>> setLoc){
+    for( int i = 0; i<setLoc.size();i++){
         if( loc[0] == setLoc[i][0] && loc[1] == setLoc[i][1])
             return i;
     }
@@ -25,14 +23,10 @@ int get_location(std::vector<int> loc, std::vector<std::vector<int>> setLoc)
 void setup(std::vector<std::vector<int>> &location){
 
     int num_robot = location.size();
-
     std::vector<int> tmp;
-
-    for ( int i=0;i<SIZEX;i++)
-    {
+    for ( int i=0;i<SIZEX;i++){
         for ( int j=0;j<SIZEY;j++){
             tmp = {i,j};
-
             if ( get_location(tmp, location) != -1)
                 std::cout<<"| "<<get_location(tmp, location)<<" |";
             else
@@ -43,13 +37,8 @@ void setup(std::vector<std::vector<int>> &location){
             std::cout<<"_____";
         }
         std::cout<<std::endl;
-
-
     }
-
     sleep(1);
-
-
     }
 
 inline int calNorm1(std::vector<int> a,std::vector<int> b){   return (abs(a[0] - b[0]) + abs(a[1]-b[1])); }
