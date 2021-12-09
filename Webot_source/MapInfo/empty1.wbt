@@ -1,0 +1,33 @@
+#VRML_SIM R2021b utf8
+WorldInfo {
+  coordinateSystem "NUE"
+}
+Viewpoint {
+  orientation -0.9747409387520022 0.18158929099650759 0.13002088953799365 0.7793133176518061
+  position 0.30506820536886253 1.6543700215896058 1.9904227414482407
+}
+TexturedBackground {
+}
+TexturedBackgroundLight {
+}
+RectangleArena {
+  floorSize 5 4
+}
+DEF e-puck E-puck {
+  hidden position_0_0 12.565176351919712
+  hidden position_0_1 13.80269279385298
+  hidden translation_1 -0.02599999999999995 0.02 0
+  hidden rotation_1 1 0 0 0.0011942624394571187
+  hidden translation_2 0.0259999999999999 0.02 0
+  hidden rotation_2 -1 0 0 1.2363221794938075
+  translation -9.910878824372668e-11 -6.391765193419774e-05 -1.2513583627162806e-11
+  controller ""
+  groundSensorsSlot [
+    GPS {
+    }
+  ]
+}
+Robot {
+  controller "supervisor"
+  supervisor TRUE
+}
