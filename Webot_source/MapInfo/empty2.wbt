@@ -1,0 +1,44 @@
+#VRML_SIM R2021b utf8
+WorldInfo {
+  coordinateSystem "NUE"
+}
+Viewpoint {
+  orientation -0.9175292926973249 0.35782409471056825 0.17349903252441792 0.6074875865056918
+  position 0.4584092787124363 1.464206222644881 2.2739660025628314
+}
+TexturedBackground {
+}
+TexturedBackgroundLight {
+}
+RectangleArena {
+  floorSize 5 4
+}
+DEF e-puck E-puck {
+  translation -9.909404709398957e-11 -6.396541721062979e-05 -1.236898241678604e-11
+  rotation -0.3167892849249229 0.000845622078888066 0.9484955634477453 4.276421307317719e-06
+  controller "my_controller"
+  emitter_channel 0
+  receiver_channel 0
+  battery [
+    0
+  ]
+  groundSensorsSlot [
+    Camera {
+    }
+    Receiver {
+      channel 3
+      byteSize 16
+    }
+    GPS {
+    }
+  ]
+}
+Robot {
+  children [
+    Emitter {
+      scale 4 4 4
+    }
+  ]
+  controller "supervisor"
+  supervisor TRUE
+}
