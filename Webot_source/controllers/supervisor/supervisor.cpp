@@ -52,12 +52,8 @@ Driver::Driver() {
   translation[1] = 0;
   translation[2] = z;
   emitter = getEmitter("emitter");
-<<<<<<< HEAD
   emitter->setChannel(0);
   Node *robot = getFromDef("robot_1");
-=======
-  Node *robot = getFromDef("e-puck");
->>>>>>> main
   if (!robot)
     // robot might be NULL if the controller is about to quit
     exit(1);
@@ -80,7 +76,6 @@ void Driver::run() {
     // Read sensors; update message according to the pressed keyboard key
     int k = keyboard->getKey();
     switch (k) {
-<<<<<<< HEAD
       case 'C':
         cout<<"channel 0"<<endl;
         emitter->setChannel(0);
@@ -91,10 +86,6 @@ void Driver::run() {
         break;
       case 'A':
         
-=======
-      case 'A':
-        cout<<"gagag"<<endl;
->>>>>>> main
         message.assign("avoid obstacles");
         break;
       case 'F':

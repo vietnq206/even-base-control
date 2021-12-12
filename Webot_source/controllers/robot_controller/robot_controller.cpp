@@ -148,11 +148,7 @@ int main(int argc, char **argv) {
   int timeStep = (int)robot->getBasicTimeStep();
   leftMotor->setPosition(INFINITY);
   rightMotor->setPosition(INFINITY);
-<<<<<<< HEAD
   leftMotor->setVelocity( MAX_SPEED); 
-=======
-  leftMotor->setVelocity( MAX_SPEED);
->>>>>>> main
   rightMotor->setVelocity(MAX_SPEED);
   // You should insert a getDevice-like function in order to get the
   // instance of a device of the robot. Something like:
