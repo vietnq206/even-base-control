@@ -1,0 +1,78 @@
+#VRML_SIM R2021b utf8
+WorldInfo {
+  coordinateSystem "NUE"
+}
+Viewpoint {
+  orientation -0.08836314980982345 0.9204278880560075 0.3807945071090765 2.720746520979416
+  position 1.4264247740587517 1.24454862166898 -0.28222854542474285
+}
+TexturedBackground {
+}
+TexturedBackgroundLight {
+}
+RectangleArena {
+  floorSize 2.2 2.2
+  floorAppearance Parquetry {
+    type "light strip"
+  }
+}
+DEF robot_1 E-puck {
+  translation 0.595036 -6.31844e-05 1.00742
+  rotation -1.983519998426859e-05 0.9999999992068942 3.453659997260882e-05 0.153067
+  name "robot_1"
+  controller "robot_controller"
+  emitter_channel 0
+  receiver_channel 0
+  battery [
+    0
+  ]
+  groundSensorsSlot [
+    Camera {
+    }
+    GPS {
+    }
+  ]
+}
+DEF robot_2 E-puck {
+  translation 1 0 0.6
+  rotation 0 1 0 1.8326
+  name "robot_2"
+  controller "robot2_controller"
+  emitter_channel 0
+  battery [
+    0
+  ]
+  groundSensorsSlot [
+    Camera {
+      name "camera(1)"
+    }
+    GPS {
+    }
+  ]
+}
+Robot {
+  children [
+    Emitter {
+      scale 4 4 4
+    }
+  ]
+  name "supervisor"
+  controller "supervisor"
+  supervisor TRUE
+}
+LegoInterval {
+  translation 0.6 0.13 1
+  name "Start1"
+}
+LegoInterval {
+  translation 1 0.13 0.6
+  name "Start2"
+}
+LegoInterval {
+  translation -1.01 0.13 -0.6
+  name "End_1"
+}
+LegoInterval {
+  translation -0.6 0.13 -1
+  name "End_2"
+}
