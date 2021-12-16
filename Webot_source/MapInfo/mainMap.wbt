@@ -17,10 +17,10 @@ RectangleArena {
   }
 }
 DEF robot_1 E-puck {
-  translation 0.595036 -6.31844e-05 1.00742
+  translation 0.8 0 1
   rotation -1.983519998426859e-05 0.9999999992068942 3.453659997260882e-05 0.153067
   name "robot_1"
-  controller "robot_controller"
+  controller ""
   emitter_channel 0
   receiver_channel 0
   battery [
@@ -34,10 +34,10 @@ DEF robot_1 E-puck {
   ]
 }
 DEF robot_2 E-puck {
-  translation 1 0 0.6
+  translation 1 0 0.8
   rotation 0 1 0 1.8326
   name "robot_2"
-  controller "robot2_controller"
+  controller ""
   emitter_channel 0
   battery [
     0
