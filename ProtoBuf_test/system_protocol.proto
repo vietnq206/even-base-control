@@ -1,0 +1,9 @@
+syntax="proto3";
+
+package protocal;
+
+message RobotEvent {
+    int32 robotID=1;
+    optional string eventSent=2;
+
+}
