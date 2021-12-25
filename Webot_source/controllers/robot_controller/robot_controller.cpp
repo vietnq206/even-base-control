@@ -7,7 +7,7 @@
 // You may need to add webots include files such as
 // <webots/DistanceSensor.hpp>, <webots/Motor.hpp>, etc.
 // and/or to add some other includes
- 
+#include <webots/Gyro.hpp>
 #include <webots/GPS.hpp>
 #include <webots/Camera.hpp>
 #include <webots/DistanceSensor.hpp>
@@ -15,18 +15,32 @@
 #include <webots/Receiver.hpp>
 #include <webots/Robot.hpp>
 #include <webots/utils/AnsiCodes.hpp>
+#include <webots/InertialUnit.hpp>
 
 #include <algorithm>
 #include <iostream>
 #include <limits>
 #include <string>
+#include <math.h>
 
 // All the webots classes are defined in the "webots" namespace
 using namespace std;
-using namespace webots;
-#define TIME_STEP 64
-
+using namespace webots; 
 #define MAX_SPEED 6.28
+
+
+#define TIME_STEP 32
+#define Dwth 135
+#define Dwth_wall 150
+
+// Robot constants for odometry
+#define WHEEL_RADIUS 0.0205 // in m
+#define AXLE_LENGTH 0.052 // in m
+#define STEPS_ROT 1000 // 1000 steps per rotatation
+#define PI 3.141592654
+#define PI2 1.570796326
+
+
 
 // This is the main program of your controller.
 // It creates an instance of your Robot instance, launches its
@@ -42,7 +56,9 @@ class Slave : public Robot {
 public:
   Slave();
   void run();
-
+  void forward();
+  void getWheelDisplacements(double *dispLeftW, double *dispRightW, double del_enLeftW, double del_enRightW);
+  void turnLeft();
 private:
   enum Mode { STOP, MOVE_FORWARD, AVOID_OBSTACLES, TURN };
 
@@ -52,17 +68,26 @@ private:
   Mode mode;
   Receiver *receiver;
   Camera *camera;
-   
   Motor *motors[2];
+  GPS *gp;
+  Gyro *gr;
+  InertialUnit *iu;
+
 };
 
 Slave::Slave() {
+  gp = this->getGPS("gps");
+  gr = this->getGyro("gyro");
+  iu = this->getInertialUnit("imu");
+  gp->enable(TIME_STEP);
+  gr->enable(TIME_STEP);
+  iu->enable(TIME_STEP);
   timeStep = 32;
   mode = AVOID_OBSTACLES;
   camera = getCamera("camera");
-  camera->enable(4 * timeStep);
+  camera->enable(4 * TIME_STEP);
   receiver = getReceiver("receiver");
-  receiver->enable(timeStep);
+  receiver->enable(TIME_STEP);
   receiver->setChannel(0);
   motors[0] = getMotor("left wheel motor");
   motors[1] = getMotor("right wheel motor");
@@ -73,13 +98,64 @@ Slave::Slave() {
  
 }
 
+
+void Slave::turnLeft(){
+  const double* currIMU = iu->getRollPitchYaw();
+  double targetYall = currIMU[2] + PI2;
+  if ( targetYall > PI)
+    targetYall = fmodf(targetYall,PI) - PI;
+
+  motors[0]->setVelocity(-MAX_SPEED);
+  motors[1]->setVelocity(MAX_SPEED);
+  while(this->step(TIME_STEP) != -1){
+
+    currIMU = iu->getRollPitchYaw();
+    std::cout<<"X ="<<currIMU[0]<<"Y= "<<currIMU[1]<<" Z = "<<currIMU[2]<<std::endl;
+    
+    // std::cout<<"target : "<<abs(currIMU[2]-targetYall)<<std::endl;
+    
+    if (abs(currIMU[2]-targetYall)<0.01)
+      {
+        motors[0]->setVelocity(MAX_SPEED);
+        //motors[1]->setVelocity(0);
+        break;
+      }
+      
+
+
+  }
+
+
+}
+
+void Slave::getWheelDisplacements(double *dispLeftW, double *dispRightW, double del_enLeftW, double del_enRightW) {
+
+  // compute displacement of left wheel in meters
+  *dispLeftW = del_enLeftW / STEPS_ROT * 2 * PI * WHEEL_RADIUS; 
+  // compute displacement of right wheel in meters
+  *dispRightW = del_enRightW / STEPS_ROT * 2 * PI * WHEEL_RADIUS; 
+}
+
 double Slave::boundSpeed(double speed) {
   return std::min(maxSpeed, std::max(-maxSpeed, speed));
 }
 
+void Slave::forward(){ 
+
+  motors[0]->setVelocity(MAX_SPEED);
+  const double* tmp;
+  motors[1]->setVelocity(-MAX_SPEED);
+  while (this->step(TIME_STEP) != -1)
+  {
+    tmp = iu->getRollPitchYaw();
+    // std::cout<<"X ="<<gr->getValues()[0]<<"Y= "<<gr->getValues()[1]<<" Z = "<<gr->getValues()[2]<<std::endl;
+    std::cout<<"X ="<<tmp[0]<<"Y= "<<tmp[1]<<" Z = "<<tmp[2]<<std::endl;
+  }
+
+}
 void Slave::run() {
   // main loop
-  while (step(timeStep) != -1) {
+  while (step(TIME_STEP) != -1) {
     // Read sensors, particularly the order of the supervisor
     if (receiver->getQueueLength() > 0) {
       string message((const char *)receiver->getData());
@@ -135,7 +211,7 @@ void Slave::run() {
 int main(int argc, char **argv) {
 
     Slave *controller = new Slave();
-  controller->run();
+  controller->turnLeft();
   delete controller;
   return 0;
 
