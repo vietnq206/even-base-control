@@ -26,7 +26,7 @@
 // All the webots classes are defined in the "webots" namespace
 using namespace std;
 using namespace webots; 
-#define MAX_SPEED 6.28
+#define MAX_SPEED 3
 
 
 #define TIME_STEP 32
@@ -42,14 +42,6 @@ using namespace webots;
 
 
 
-// This is the main program of your controller.
-// It creates an instance of your Robot instance, launches its
-// function(s) and destroys it at the end of the execution.
-// Note that only one instance of Robot should be created in
-// a controller program.
-// The arguments of the main function can be specified by the
-// "controllerArgs" field of the Robot node
-
 static const double maxSpeed = 10.0;
 
 class Slave : public Robot {
@@ -57,17 +49,19 @@ public:
   Slave();
   void run();
   void forward();
-  void getWheelDisplacements(double *dispLeftW, double *dispRightW, double del_enLeftW, double del_enRightW);
   void turnLeft();
+  void turnRight();
+  void stop();
+  void robotOrientation();
 private:
   enum Mode { STOP, MOVE_FORWARD, AVOID_OBSTACLES, TURN };
-
+  enum Orient {EAST, WEST, NORTH, SOUTH};
   static double boundSpeed(double speed);
 
-  int timeStep;
+   
   Mode mode;
-  Receiver *receiver;
-  Camera *camera;
+  Orient orient;
+  Receiver *receiver; 
   Motor *motors[2];
   GPS *gp;
   Gyro *gr;
@@ -81,21 +75,26 @@ Slave::Slave() {
   iu = this->getInertialUnit("imu");
   gp->enable(TIME_STEP);
   gr->enable(TIME_STEP);
-  iu->enable(TIME_STEP);
-  timeStep = 32;
+  iu->enable(TIME_STEP); 
+
+
   mode = AVOID_OBSTACLES;
-  camera = getCamera("camera");
-  camera->enable(4 * TIME_STEP);
+
+   
   receiver = getReceiver("receiver");
   receiver->enable(TIME_STEP);
   receiver->setChannel(0);
+
   motors[0] = getMotor("left wheel motor");
   motors[1] = getMotor("right wheel motor");
+
   motors[0]->setPosition(std::numeric_limits<double>::infinity());
   motors[1]->setPosition(std::numeric_limits<double>::infinity());
+
   motors[0]->setVelocity(0.0);
   motors[1]->setVelocity(0.0);
- 
+  
+  robotOrientation();
 }
 
 
@@ -114,86 +113,173 @@ void Slave::turnLeft(){
     
     // std::cout<<"target : "<<abs(currIMU[2]-targetYall)<<std::endl;
     
-    if (abs(currIMU[2]-targetYall)<0.01)
+    if (abs(currIMU[2]-targetYall)<0.05)
       {
-        motors[0]->setVelocity(MAX_SPEED);
-        //motors[1]->setVelocity(0);
+        stop();
         break;
       }
-      
-
-
   }
 
+  if(orient == NORTH) orient = WEST;
+  else if (orient == WEST) orient = SOUTH;
+  else if (orient == SOUTH) orient = EAST;
+  else orient = NORTH;
+
+
+}
+void Slave::robotOrientation(){
+  const double* currIMU = iu->getRollPitchYaw(); 
+
+  double differentAngle = 2*PI;
+  if ( abs(currIMU[2]-0) < differentAngle)
+  {
+    orient = NORTH;
+    differentAngle = abs(currIMU[2]-0);
+  }
+  if ( abs(currIMU[2]-PI2) < differentAngle)
+  {
+    orient = WEST;
+    differentAngle = abs(currIMU[2]-PI2);
+  }
+
+  if ( abs(currIMU[2]+PI2) < differentAngle)
+  {
+    orient = EAST;
+    differentAngle = abs(currIMU[2]+PI2);
+  }
+  if ( abs(currIMU[2]- PI) < differentAngle && abs(currIMU[2]+PI)< differentAngle)
+  {
+    orient = SOUTH;
+  }
+}
+
+void Slave::turnRight(){
+  const double* currIMU = iu->getRollPitchYaw();
+  double targetYall = currIMU[2] - PI2;
+  if ( targetYall < -PI)
+    targetYall = fmodf(targetYall,PI) + PI;
+
+  motors[0]->setVelocity(MAX_SPEED);
+  motors[1]->setVelocity(-MAX_SPEED);
+  while(this->step(TIME_STEP) != -1){
+
+    currIMU = iu->getRollPitchYaw();
+    std::cout<<"X ="<<currIMU[0]<<"Y= "<<currIMU[1]<<" Z = "<<currIMU[2]<<std::endl;
+    
+    std::cout<<"target : "<<abs(currIMU[2]-targetYall)<<std::endl;
+    
+    if (abs(currIMU[2]-targetYall)<0.05)
+      {
+        stop();
+        break;
+      }
+  }
+ if(orient == NORTH) orient = EAST;
+  else if (orient == EAST) orient = SOUTH;
+  else if (orient == SOUTH) orient = WEST;
+  else orient = NORTH;
 
 }
 
-void Slave::getWheelDisplacements(double *dispLeftW, double *dispRightW, double del_enLeftW, double del_enRightW) {
 
-  // compute displacement of left wheel in meters
-  *dispLeftW = del_enLeftW / STEPS_ROT * 2 * PI * WHEEL_RADIUS; 
-  // compute displacement of right wheel in meters
-  *dispRightW = del_enRightW / STEPS_ROT * 2 * PI * WHEEL_RADIUS; 
+void Slave::stop(){
+  motors[0]->setVelocity(0);
+  motors[1]->setVelocity(0);
 }
+
 
 double Slave::boundSpeed(double speed) {
   return std::min(maxSpeed, std::max(-maxSpeed, speed));
 }
 
 void Slave::forward(){ 
+  double startGPS[3];
+  const double* currGPS = gp->getValues();
+  bool reachTarget = false;
+  motors[0]->setVelocity(MAX_SPEED); 
+  motors[1]->setVelocity(MAX_SPEED);
+  robotOrientation();
 
-  motors[0]->setVelocity(MAX_SPEED);
-  const double* tmp;
-  motors[1]->setVelocity(-MAX_SPEED);
-  while (this->step(TIME_STEP) != -1)
-  {
-    tmp = iu->getRollPitchYaw();
-    // std::cout<<"X ="<<gr->getValues()[0]<<"Y= "<<gr->getValues()[1]<<" Z = "<<gr->getValues()[2]<<std::endl;
-    std::cout<<"X ="<<tmp[0]<<"Y= "<<tmp[1]<<" Z = "<<tmp[2]<<std::endl;
+  if ( this->step(TIME_STEP) != -1){
+    for ( int i =0; i < 3 ; i++){startGPS[i] = currGPS[i];}
   }
 
+
+  while(this->step(TIME_STEP) != -1 && !reachTarget)
+  {
+    std::cout<<"Start :"<<startGPS[2]<<std::endl;
+    std::cout<<"Current :"<<currGPS[2]<<std::endl;
+    currGPS = gp->getValues();
+    switch (orient)
+      {
+      case NORTH:
+        if ( abs(currGPS[2] - startGPS[2]) > 0.1 ) reachTarget = true;
+        break;
+      case SOUTH:
+        if ( abs(currGPS[2] - startGPS[2]) > 0.1) reachTarget = true;
+        break;
+      case WEST:
+        if ( abs(currGPS[0] - startGPS[0]) > 0.1) reachTarget = true;
+        break;
+      case EAST:
+        if ( abs(currGPS[0] - startGPS[0]) > 0.1) reachTarget = true;
+        break;
+      
+      default:
+        break;
+      }
+  }
+  stop();
+
+ 
 }
 void Slave::run() {
   // main loop
-  while (step(TIME_STEP) != -1) {
-    // Read sensors, particularly the order of the supervisor
-    if (receiver->getQueueLength() > 0) {
-      string message((const char *)receiver->getData());
-      receiver->nextPacket();
+  std::cout<<"gagag :"<<receiver->getQueueLength() <<std::endl;
 
-      cout << "I should " << AnsiCodes::RED_FOREGROUND << message << AnsiCodes::RESET << "!" << endl;
+  while (this->step(TIME_STEP) != -1) {
+        forward();
+    turnLeft();
+    forward();
+    turnRight();
+    // // Read sensors, particularly the order of the supervisor
+    // if (receiver->getQueueLength() > 0) {
+    //   string message((const char *)receiver->getData());
+    //   receiver->nextPacket();
 
-      if (message.compare("avoid obstacles") == 0)
-        mode = AVOID_OBSTACLES;
-      else if (message.compare("move forward") == 0)
-        mode = MOVE_FORWARD;
-      else if (message.compare("stop") == 0)
-        mode = STOP;
-      else if (message.compare("turn") == 0)
-        mode = TURN;
-    }
-    double delta = 2;
-    double speeds[2] = {0.0, 0.0};
+    //   cout << "I should " << AnsiCodes::RED_FOREGROUND << message << AnsiCodes::RESET << "!" << endl;
 
-    // send actuators commands according to the mode
-    switch (mode) {
-      case AVOID_OBSTACLES:
-        speeds[0] = boundSpeed(maxSpeed / 2.0 + 0.1 * delta);
-        speeds[1] = boundSpeed(maxSpeed / 2.0 - 0.1 * delta);
-        break;
-      case MOVE_FORWARD:
-        speeds[0] = maxSpeed;
-        speeds[1] = maxSpeed;
-        break;
-      case TURN:
-        speeds[0] = maxSpeed / 2.0;
-        speeds[1] = -maxSpeed / 2.0;
-        break;
-      default:
-        break;
-    }
-    motors[0]->setVelocity(speeds[0]);
-    motors[1]->setVelocity(speeds[1]);
+    //   if (message.compare("avoid obstacles") == 0)
+    //     mode = AVOID_OBSTACLES;
+    //   else if (message.compare("move forward") == 0)
+    //     mode = MOVE_FORWARD;
+    //   else if (message.compare("stop") == 0)
+    //     mode = STOP;
+    //   else if (message.compare("turn") == 0)
+    //     mode = TURN;
+    // }
+    // double delta = 2;
+    // double speeds[2] = {0.0, 0.0};
+
+    // // send actuators commands according to the mode
+    // switch (mode) {
+    //   case AVOID_OBSTACLES:
+    //     speeds[0] = boundSpeed(maxSpeed / 2.0 + 0.1 * delta);
+    //     speeds[1] = boundSpeed(maxSpeed / 2.0 - 0.1 * delta);
+    //     break;
+    //   case MOVE_FORWARD:
+    //     speeds[0] = maxSpeed;
+    //     speeds[1] = maxSpeed;
+    //     break;
+    //   case TURN:
+    //     speeds[0] = maxSpeed / 2.0;
+    //     speeds[1] = -maxSpeed / 2.0;
+    //     break;
+    //   default:
+    //     break;
+    // }
+    // motors[0]->setVelocity(speeds[0]);
+    // motors[1]->setVelocity(speeds[1]);
   }
 }
 
@@ -211,49 +297,8 @@ void Slave::run() {
 int main(int argc, char **argv) {
 
     Slave *controller = new Slave();
-  controller->turnLeft();
+  controller->run();
   delete controller;
   return 0;
 
-
-
-  // create the Robot instance.
-  Robot *robot = new Robot();
-  Motor *leftMotor = robot->getMotor("left wheel motor");
-  Motor *rightMotor = robot->getMotor("right wheel motor");
-  // get the time step of the current world.
-  int timeStep = (int)robot->getBasicTimeStep();
-  leftMotor->setPosition(INFINITY);
-  rightMotor->setPosition(INFINITY);
-  leftMotor->setVelocity( MAX_SPEED); 
-  rightMotor->setVelocity(MAX_SPEED);
-  // You should insert a getDevice-like function in order to get the
-  // instance of a device of the robot. Something like:
-  //  Motor *motor = robot->getMotor("motorname");
-  //  DistanceSensor *ds = robot->getDistanceSensor("dsname");
-  //  ds->enable(timeStep);
-  GPS *gp;
-  gp = robot->getGPS("gps");
-  gp->enable(TIME_STEP);
-  std::cout<<"HELLLP"<<std::endl;
-   
-  // Main loop:
-  // - perform simulation steps until Webots is stopping the controller
-  while (robot->step(TIME_STEP) != -1) {
-    // Read the sensors:
-    // Enter here functions to read sensor data, like:
-    //  double val = ds->getValue();
-      std::cout<<"X ="<<gp->getValues()[0]<<"Y= "<<gp->getValues()[1]<<" Z = "<<gp->getValues()[2]<<std::endl;
-    
-    
-    // Process sensor data here.
-
-    // Enter here functions to send actuator commands, like:
-    //  motor->setPosition(10.0);
-  };
-
-  // Enter here exit cleanup code.
-
-  delete robot;
-  return 0;
 }
