@@ -17,8 +17,8 @@
 
 using namespace webots;
 #define TIME_STEP 32
-#define SIZE_X 10
-#define SIZE_Y 10
+#define SIZE_X 20
+#define SIZE_Y 20
 
 // You may need to add webots include files such as
 // <webots/DistanceSensor.hpp>, <webots/Motor.hpp>, etc.
@@ -42,6 +42,7 @@ bool activeMode;
 std::vector<point> pathJobs;
 int robotID;
 double tmp[4] = {0,1,0,0};
+
 
 public:
   RobotControl(Node* rb, int rbID);
@@ -83,7 +84,7 @@ bool RobotControl::askMove(point askLoc, std::vector<std::vector<int>> mapRegist
 
 class Driver : public Supervisor {
 public:
-  Driver(std::vector<std::string> rbSet);
+  Driver(std::vector<std::string> rbSet,std::vector<std::vector<point>> path);
   void run();
   void robotRegister(std::vector<point> askLoc);
   void releaseRegister(std::vector<point> setLocRobot );
@@ -103,8 +104,8 @@ private:
   double z;
   double translation[3];
   std::vector<RobotControl>  robots; 
-
   std::vector<std::vector<int>> mapRegister;
+  std::vector<std::vector<point>> pathRobot;
 };
 
 void Driver::releaseRegister(std::vector<point> setLocRobot ){
@@ -117,7 +118,7 @@ void Driver::releaseRegister(std::vector<point> setLocRobot ){
         }
     }
 }
-Driver::Driver(std::vector<std::string> rbSet) {
+Driver::Driver(std::vector<std::string> rbSet,std::vector<std::vector<point>> path) {
   timeStep = 128;
   numRobot = rbSet.size();
   x = 0.1f;
@@ -126,6 +127,7 @@ Driver::Driver(std::vector<std::string> rbSet) {
   translation[1] = 0;
   translation[2] = z;
 
+  pathRobot = path;
 
   emitter = getEmitter("emitter");
   emitter->setChannel(0);
@@ -159,22 +161,38 @@ void Driver::test(){
 
   robots[0].setLocation(LocR1);
   robots[1].setLocation(LocR2);
-  std::vector<point> set = {{0,2},{2,0}};
+  std::vector<point> set = {pathRobot[0][0],pathRobot[1][0]};
       //Robot1 sequence of moving
-    std::vector<point> set1 = {{0,2},{1,2},{2,2},{3,2},{3,3},{3,4},{3,5},{3,6},{3,7},{3,8},{3,9}};
-    
+    std::vector<point> set1 = pathRobot[0];
     //Robot2 sequence of moving
-    std::vector<point> set2 = {{2,0},{2,1},{2,2},{2,3},{3,3},{4,3},{5,3},{6,3},{7,3},{8,3},{9,3}};
+    std::vector<point> set2 = pathRobot[1];
   robotRegister(set);
 
- 
-  
+  std::string message("");
+  emitter->setChannel(0);
   int r1Indx = 1;
   int r2Indx = 1;
+  int t1 = 0;
+  int t2 = 0;
   while(step(timeStep) != -1)
     {
+      
+      // std::cout<<"PRESEND"<<std::endl;
+      if (!message.empty() ) { 
+      // std::cout<<"SENDING"<<std::endl;
+      emitter->send(message.c_str(), (int)strlen(message.c_str()) + 1);
+      }
+      message.assign("#");
+      message.append(std::to_string(t1));
+      
+      message.append("1#11#13"); 
+      t1 == 0 ? t1 = 1: t1 = 0;
+      
+      // if(t1 == 0 ) t1 = 1;
+      // else t1 = 0;
+
       int k = keyboard->getKey();
-      if (k == 'N')
+      //if (k == 'N')
       {
                 // set of requesting moves
         std::vector<point> setAsk ;

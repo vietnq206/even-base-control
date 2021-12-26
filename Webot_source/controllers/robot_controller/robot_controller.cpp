@@ -22,6 +22,8 @@
 #include <limits>
 #include <string>
 #include <math.h>
+#include <vector>
+#include <queue>
 
 // All the webots classes are defined in the "webots" namespace
 using namespace std;
@@ -40,9 +42,15 @@ using namespace webots;
 #define PI 3.141592654
 #define PI2 1.570796326
 
-
-
 static const double maxSpeed = 10.0;
+
+struct point{
+    int locX;
+    int locZ;
+};
+
+
+
 
 class Slave : public Robot {
 public:
@@ -54,9 +62,8 @@ public:
   void stop();
   void robotOrientation();
 private:
-  enum Mode { STOP, MOVE_FORWARD, AVOID_OBSTACLES, TURN };
-  enum Orient {EAST, WEST, NORTH, SOUTH};
-  static double boundSpeed(double speed);
+  enum Mode {STOP, GO};
+  enum Orient {EAST, WEST, NORTH, SOUTH}; 
 
    
   Mode mode;
@@ -66,7 +73,9 @@ private:
   GPS *gp;
   Gyro *gr;
   InertialUnit *iu;
-
+  int robotNum;
+  std::queue<int> exeCommand;
+  std::vector<point> path1;
 };
 
 Slave::Slave() {
@@ -78,8 +87,8 @@ Slave::Slave() {
   iu->enable(TIME_STEP); 
 
 
-  mode = AVOID_OBSTACLES;
-
+  mode = STOP;
+  path1 = generatePath({{0,2},{8,2},{8,15},{19,15}});
    
   receiver = getReceiver("receiver");
   receiver->enable(TIME_STEP);
@@ -95,6 +104,7 @@ Slave::Slave() {
   motors[1]->setVelocity(0.0);
   
   robotOrientation();
+  robotNum = 1;
 }
 
 
@@ -111,7 +121,6 @@ void Slave::turnLeft(){
     currIMU = iu->getRollPitchYaw();
     std::cout<<"X ="<<currIMU[0]<<"Y= "<<currIMU[1]<<" Z = "<<currIMU[2]<<std::endl;
     
-    // std::cout<<"target : "<<abs(currIMU[2]-targetYall)<<std::endl;
     
     if (abs(currIMU[2]-targetYall)<0.05)
       {
@@ -163,10 +172,7 @@ void Slave::turnRight(){
   motors[1]->setVelocity(-MAX_SPEED);
   while(this->step(TIME_STEP) != -1){
 
-    currIMU = iu->getRollPitchYaw();
-    std::cout<<"X ="<<currIMU[0]<<"Y= "<<currIMU[1]<<" Z = "<<currIMU[2]<<std::endl;
-    
-    std::cout<<"target : "<<abs(currIMU[2]-targetYall)<<std::endl;
+    currIMU = iu->getRollPitchYaw(); 
     
     if (abs(currIMU[2]-targetYall)<0.05)
       {
@@ -187,11 +193,7 @@ void Slave::stop(){
   motors[1]->setVelocity(0);
 }
 
-
-double Slave::boundSpeed(double speed) {
-  return std::min(maxSpeed, std::max(-maxSpeed, speed));
-}
-
+ 
 void Slave::forward(){ 
   double startGPS[3];
   const double* currGPS = gp->getValues();
@@ -207,8 +209,8 @@ void Slave::forward(){
 
   while(this->step(TIME_STEP) != -1 && !reachTarget)
   {
-    std::cout<<"Start :"<<startGPS[2]<<std::endl;
-    std::cout<<"Current :"<<currGPS[2]<<std::endl;
+    // std::cout<<"Start :"<<startGPS[2]<<std::endl;
+    // std::cout<<"Current :"<<currGPS[2]<<std::endl;
     currGPS = gp->getValues();
     switch (orient)
       {
@@ -235,63 +237,87 @@ void Slave::forward(){
 }
 void Slave::run() {
   // main loop
-  std::cout<<"gagag :"<<receiver->getQueueLength() <<std::endl;
+ 
+  std::string prev_mess = "";
+  std::string message;
+  exeCommand.push(1);
+  exeCommand.push(1);
+  exeCommand.push(1);
+  exeCommand.push(1);
+  int indexPath = 1;
 
   while (this->step(TIME_STEP) != -1) {
-        forward();
-    turnLeft();
-    forward();
-    turnRight();
-    // // Read sensors, particularly the order of the supervisor
-    // if (receiver->getQueueLength() > 0) {
-    //   string message((const char *)receiver->getData());
+        
+    // turnLeft();
+    // forward();
+    // turnRight();
+     
+    // while (receiver->getQueueLength() > 0) {
+    //   message = ((const char *)receiver->getData());
+    //   if(message.compare(robotNum,2,prev_mess))
+    //   {
+    //     exeCommand.push_back(int(message[robotNum+1]) - 48);
+    //     prev_mess = message.substr(robotNum,2);
+    //   }
     //   receiver->nextPacket();
-
-    //   cout << "I should " << AnsiCodes::RED_FOREGROUND << message << AnsiCodes::RESET << "!" << endl;
-
-    //   if (message.compare("avoid obstacles") == 0)
-    //     mode = AVOID_OBSTACLES;
-    //   else if (message.compare("move forward") == 0)
-    //     mode = MOVE_FORWARD;
-    //   else if (message.compare("stop") == 0)
-    //     mode = STOP;
-    //   else if (message.compare("turn") == 0)
-    //     mode = TURN;
     // }
-    // double delta = 2;
-    // double speeds[2] = {0.0, 0.0};
+    
+    if (!exeCommand.empty())
+    {
+      if(exeCommand.front()== 1)
+      {
+        
+      }
+      else{
+        stop();
+      }
+      exeCommand.pop();
 
-    // // send actuators commands according to the mode
-    // switch (mode) {
-    //   case AVOID_OBSTACLES:
-    //     speeds[0] = boundSpeed(maxSpeed / 2.0 + 0.1 * delta);
-    //     speeds[1] = boundSpeed(maxSpeed / 2.0 - 0.1 * delta);
-    //     break;
-    //   case MOVE_FORWARD:
-    //     speeds[0] = maxSpeed;
-    //     speeds[1] = maxSpeed;
-    //     break;
-    //   case TURN:
-    //     speeds[0] = maxSpeed / 2.0;
-    //     speeds[1] = -maxSpeed / 2.0;
-    //     break;
-    //   default:
-    //     break;
+    }
+
+
+    // for (auto elm:exeCommand){
+    //   std::cout<<elm;
     // }
-    // motors[0]->setVelocity(speeds[0]);
-    // motors[1]->setVelocity(speeds[1]);
+    // std::cout<<std::endl;
+    forward();
+
   }
 }
 
 
+std::vector<point> generatePath(std::vector<point> setPoint){
 
-
-
-
-
-
-
-
+    std::vector<point> path;
+    point tmp,start,end;
+    end = setPoint[0];
+    
+    for (auto elm : setPoint)
+    {
+    start = end;
+    end = elm;    
+    if (start.locX != end.locX){
+      for ( int i=start.locX;i<end.locX;++i)
+        {
+            tmp.locX = i;
+            tmp.locZ = start.locZ;
+            path.push_back(tmp);
+        }       
+    }
+    else
+    {
+      for ( int i=start.locZ;i<end.locZ;++i)
+        {
+            tmp.locZ = i;
+            tmp.locX = start.locX;
+            path.push_back(tmp);
+        }       
+    }
+    }
+     path.push_back(setPoint[setPoint.size()-1]);
+    
+    return path;
+}
 
 
 int main(int argc, char **argv) {
