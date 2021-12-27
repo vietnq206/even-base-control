@@ -3,8 +3,8 @@ WorldInfo {
   coordinateSystem "NUE"
 }
 Viewpoint {
-  orientation -0.0275930558510998 0.9344488411106353 0.355026740705244 3.443142108329464
-  position -0.008362322114909837 1.0438636692187813 -0.4974240600816061
+  orientation -0.12500959486229052 0.9713685489925623 0.20202906528628514 2.746937179348432
+  position 1.2263098254062135 0.7936477898708322 -2.176794658193815
 }
 TexturedBackground {
 }
@@ -17,9 +17,10 @@ RectangleArena {
   }
 }
 DEF robot_1 E-puck {
-  translation 0.8 0 1
+  translation 0.8 0 -1
+  rotation 0 1 0 3.141592653589793
   name "robot_1"
-  controller "robot_controller"
+  controller ""
   emitter_channel 0
   receiver_channel 0
   battery [
@@ -38,13 +39,19 @@ DEF robot_1 E-puck {
   ]
 }
 DEF robot_2 E-puck {
-  translation 1.000000000152025 -6.396819564284846e-05 0.8000000001606083
-  rotation 1.1322596182121489e-05 0.9999999999214861 -5.369062643200133e-06 1.5708003024966024
+  translation 1 -6.39682e-05 -0.8
+  rotation 0 1 0 3.141592653589793
   name "robot_2"
-  controller ""
+  controller "robot2_controller"
   emitter_channel 0
+  receiver_channel 0
   battery [
     0
+  ]
+  turretSlot [
+    InertialUnit {
+      name "imu"
+    }
   ]
   groundSensorsSlot [
     Camera {
@@ -61,21 +68,22 @@ Robot {
     }
   ]
   name "supervisor"
-  controller ""
+  controller "supervisor"
+  supervisor TRUE
 }
 LegoInterval {
-  translation 0.6 0.13 1
+  translation 0.8 0.13 -1
   name "Start1"
 }
 LegoInterval {
-  translation 1 0.13 0.6
+  translation 1 0.13 -0.8
   name "Start2"
 }
 LegoInterval {
-  translation -1.01 0.13 -0.6
+  translation -1 0.13 0.6
   name "End_1"
 }
 LegoInterval {
-  translation -0.6 0.13 -1
+  translation -0.6 0.13 1
   name "End_2"
 }
