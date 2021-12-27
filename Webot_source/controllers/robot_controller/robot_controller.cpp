@@ -1,3 +1,5 @@
+
+
 // File:          my_controller.cpp
 // Date:
 // Description:
@@ -50,6 +52,39 @@ struct point{
 };
 
 
+std::vector<point> generatePath(std::vector<point> setPoint){
+
+    std::vector<point> path;
+    point tmp,start,end;
+    end = setPoint[0];
+    
+    for (auto elm : setPoint)
+    {
+    start = end;
+    end = elm;    
+    if (start.locX != end.locX){
+      for ( int i=start.locX;i<end.locX;++i)
+        {
+            tmp.locX = i;
+            tmp.locZ = start.locZ;
+            path.push_back(tmp);
+        }       
+    }
+    else
+    {
+      for ( int i=start.locZ;i<end.locZ;++i)
+        {
+            tmp.locZ = i;
+            tmp.locX = start.locX;
+            path.push_back(tmp);
+        }       
+    }
+    }
+     path.push_back(setPoint[setPoint.size()-1]);
+    
+    return path;
+}
+
 
 
 class Slave : public Robot {
@@ -61,6 +96,7 @@ public:
   void turnRight();
   void stop();
   void robotOrientation();
+  point getVectorOrient();
 private:
   enum Mode {STOP, GO};
   enum Orient {EAST, WEST, NORTH, SOUTH}; 
@@ -88,7 +124,7 @@ Slave::Slave() {
 
 
   mode = STOP;
-  path1 = generatePath({{0,2},{8,2},{8,15},{19,15}});
+  path1 = generatePath({{2,0},{2,10},{16,10},{16,19}});
    
   receiver = getReceiver("receiver");
   receiver->enable(TIME_STEP);
@@ -107,7 +143,12 @@ Slave::Slave() {
   robotNum = 1;
 }
 
-
+point Slave::getVectorOrient(){
+  if (orient == NORTH) return {0,1};
+  if ( orient == WEST) return {-1,0};
+  if ( orient == SOUTH) return {0,-1};
+  return {1,0};
+}
 void Slave::turnLeft(){
   const double* currIMU = iu->getRollPitchYaw();
   double targetYall = currIMU[2] + PI2;
@@ -142,24 +183,25 @@ void Slave::robotOrientation(){
   double differentAngle = 2*PI;
   if ( abs(currIMU[2]-0) < differentAngle)
   {
-    orient = NORTH;
+    orient = SOUTH;
     differentAngle = abs(currIMU[2]-0);
   }
   if ( abs(currIMU[2]-PI2) < differentAngle)
   {
-    orient = WEST;
+    orient = EAST;
     differentAngle = abs(currIMU[2]-PI2);
   }
 
   if ( abs(currIMU[2]+PI2) < differentAngle)
   {
-    orient = EAST;
+    orient = WEST;
     differentAngle = abs(currIMU[2]+PI2);
   }
-  if ( abs(currIMU[2]- PI) < differentAngle && abs(currIMU[2]+PI)< differentAngle)
+  if ( abs(currIMU[2]- PI) < differentAngle || abs(currIMU[2]+PI)< differentAngle)
   {
-    orient = SOUTH;
+    orient = NORTH;
   }
+
 }
 
 void Slave::turnRight(){
@@ -211,10 +253,12 @@ void Slave::forward(){
   {
     // std::cout<<"Start :"<<startGPS[2]<<std::endl;
     // std::cout<<"Current :"<<currGPS[2]<<std::endl;
-    currGPS = gp->getValues();
+        currGPS = gp->getValues();
+      
     switch (orient)
       {
       case NORTH:
+        
         if ( abs(currGPS[2] - startGPS[2]) > 0.1 ) reachTarget = true;
         break;
       case SOUTH:
@@ -240,84 +284,72 @@ void Slave::run() {
  
   std::string prev_mess = "";
   std::string message;
-  exeCommand.push(1);
-  exeCommand.push(1);
-  exeCommand.push(1);
-  exeCommand.push(1);
+  // for ( int i =0;i<33;++i)
+  //   exeCommand.push(1);
+  
   int indexPath = 1;
-
+  float decision;
+  point vecDesign;
+  point vecOritent = getVectorOrient();
+  for (auto elm: path1){
+      std::cout<<"{"<<elm.locX<<","<<elm.locZ<<"},";
+    }
+    std::cout<<std::endl;
   while (this->step(TIME_STEP) != -1) {
-        
+   
+
+
     // turnLeft();
     // forward();
     // turnRight();
      
-    // while (receiver->getQueueLength() > 0) {
-    //   message = ((const char *)receiver->getData());
-    //   if(message.compare(robotNum,2,prev_mess))
-    //   {
-    //     exeCommand.push_back(int(message[robotNum+1]) - 48);
-    //     prev_mess = message.substr(robotNum,2);
-    //   }
-    //   receiver->nextPacket();
-    // }
-    
-    if (!exeCommand.empty())
-    {
-      if(exeCommand.front()== 1)
+    while (receiver->getQueueLength() > 0) {
+      message = ((const char *)receiver->getData());
+      if(message.compare(robotNum,2,prev_mess))
       {
-        
+        exeCommand.push(int(message[robotNum+1]) - 48);
+        prev_mess = message.substr(robotNum,2);
       }
-      else{
+      receiver->nextPacket();
+    }
+    
+    // const double* currIMU = iu->getRollPitchYaw(); 
+
+    // std::cout<<"oritne :"<<currIMU[2]<<std::endl;
+   
+    // robotOrientation();
+   
+    if (!exeCommand.empty()&& indexPath < path1.size())
+    {
+      if(exeCommand.front() == 1)
+      {
+        vecDesign.locX = path1[indexPath].locX-path1[indexPath-1].locX;
+        vecDesign.locZ = path1[indexPath].locZ-path1[indexPath-1].locZ;
+        decision = -vecOritent.locX*vecDesign.locZ + vecOritent.locZ*vecDesign.locX;
+        std::cout<<"Decision of "<<indexPath<<" is :"<<decision<<std::endl;
+        if(decision==0) 
+        {
+          forward();
+          exeCommand.pop();
+          indexPath++;
+        }
+        else if( decision > 0) turnRight();
+        else turnLeft();
+      }
+      else {
+        exeCommand.pop();
+      }
         stop();
-      }
-      exeCommand.pop();
-
+        vecOritent = getVectorOrient();
+        
     }
 
-
-    // for (auto elm:exeCommand){
-    //   std::cout<<elm;
-    // }
-    // std::cout<<std::endl;
-    forward();
-
-  }
+    else stop();
+    } 
+    
 }
 
 
-std::vector<point> generatePath(std::vector<point> setPoint){
-
-    std::vector<point> path;
-    point tmp,start,end;
-    end = setPoint[0];
-    
-    for (auto elm : setPoint)
-    {
-    start = end;
-    end = elm;    
-    if (start.locX != end.locX){
-      for ( int i=start.locX;i<end.locX;++i)
-        {
-            tmp.locX = i;
-            tmp.locZ = start.locZ;
-            path.push_back(tmp);
-        }       
-    }
-    else
-    {
-      for ( int i=start.locZ;i<end.locZ;++i)
-        {
-            tmp.locZ = i;
-            tmp.locX = start.locX;
-            path.push_back(tmp);
-        }       
-    }
-    }
-     path.push_back(setPoint[setPoint.size()-1]);
-    
-    return path;
-}
 
 
 int main(int argc, char **argv) {

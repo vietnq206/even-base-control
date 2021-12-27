@@ -156,11 +156,11 @@ void Driver::robotRegister(std::vector<point> askLoc){
 
 
 void Driver::test(){
-  double LocR1[3] = {0.8,0,1};
-  double LocR2[3] = {1,0,0.8};
+  double LocR1[3] = {0.8,0,-1};
+  double LocR2[3] = {1,0,-0.8};
 
-  robots[0].setLocation(LocR1);
-  robots[1].setLocation(LocR2);
+  // robots[0].setLocation(LocR1);
+  // robots[1].setLocation(LocR2);
   std::vector<point> set = {pathRobot[0][0],pathRobot[1][0]};
       //Robot1 sequence of moving
     std::vector<point> set1 = pathRobot[0];
@@ -192,7 +192,7 @@ void Driver::test(){
       // else t1 = 0;
 
       int k = keyboard->getKey();
-      //if (k == 'N')
+      if (k == 'N')
       {
                 // set of requesting moves
         std::vector<point> setAsk ;
@@ -210,10 +210,10 @@ void Driver::test(){
         set[0] = set1[r1Indx-1];
         set[1] = set2[r2Indx-1];
         LocR1[0] = 1 - set[0].locX*0.1;
-        LocR1[2] = 1 - set[0].locZ*0.1;
+        LocR1[2] = -1 + set[0].locZ*0.1;
 
         LocR2[0] = 1 - set[1].locX*0.1;
-        LocR2[2] = 1 - set[1].locZ*0.1;
+        LocR2[2] = -1 + set[1].locZ*0.1;
 
         robots[0].setLocation(LocR1);
         robots[1].setLocation(LocR2);

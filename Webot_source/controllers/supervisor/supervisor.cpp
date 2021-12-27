@@ -34,9 +34,6 @@ std::vector<point> generatePath(std::vector<point> setPoint){
             path.push_back(tmp);
         }       
     }
-    
-    
-    
     }
      path.push_back(setPoint[setPoint.size()-1]);
     
