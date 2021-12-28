@@ -1,5 +1,7 @@
 
 #include <webots/Emitter.hpp>
+
+#include <webots/Receiver.hpp>
 #include <webots/Field.hpp>
 #include <webots/Keyboard.hpp>
 #include <webots/Node.hpp>
@@ -97,6 +99,7 @@ private:
   int timeStep;
   int numRobot;
   Emitter *emitter;
+  Receiver *receiver; 
   Field *translationField , *translationField2;
   Field *motor1;
   Keyboard *keyboard;
@@ -131,6 +134,13 @@ Driver::Driver(std::vector<std::string> rbSet,std::vector<std::vector<point>> pa
 
   emitter = getEmitter("emitter");
   emitter->setChannel(0);
+
+  receiver = getReceiver("receiver");
+  receiver->enable(TIME_STEP);
+  receiver->setChannel(1);
+
+
+
   std::vector<int> tmp;
   for (int i =0;i<SIZE_X;++i){
     for (int j =0;j<SIZE_Y;++j)
@@ -159,6 +169,13 @@ void Driver::test(){
   double LocR1[3] = {0.8,0,-1};
   double LocR2[3] = {1,0,-0.8};
 
+  std::vector<std::string> ackAskRobot;
+
+  for ( int i = 0; i< numRobot; ++i )
+  {
+    ackAskRobot.push_back("0");
+  }
+
   // robots[0].setLocation(LocR1);
   // robots[1].setLocation(LocR2);
   std::vector<point> set = {pathRobot[0][0],pathRobot[1][0]};
@@ -169,6 +186,7 @@ void Driver::test(){
   robotRegister(set);
 
   std::string message("");
+  std::string messIn("");
   emitter->setChannel(0);
   int r1Indx = 1;
   int r2Indx = 1;
@@ -177,6 +195,10 @@ void Driver::test(){
   while(step(timeStep) != -1)
     {
       
+
+
+
+
       // std::cout<<"PRESEND"<<std::endl;
       if (!message.empty() ) { 
       // std::cout<<"SENDING"<<std::endl;
@@ -191,10 +213,19 @@ void Driver::test(){
       // if(t1 == 0 ) t1 = 1;
       // else t1 = 0;
 
+      if (receiver->getQueueLength() > 0) {
+      messIn = ((const char *)receiver->getData());
+      std::cout<<"REEIVED : "<<messIn<<std::endl;
+      receiver->nextPacket();
+    }
+
+
+
+
       int k = keyboard->getKey();
       if (k == 'N')
       {
-                // set of requesting moves
+        // set of requesting moves
         std::vector<point> setAsk ;
         
         setAsk.push_back(set1[r1Indx]);

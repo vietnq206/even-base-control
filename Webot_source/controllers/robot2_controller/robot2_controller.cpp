@@ -14,11 +14,13 @@
 #include <webots/Camera.hpp>
 #include <webots/DistanceSensor.hpp>
 #include <webots/Motor.hpp>
+#include <webots/Emitter.hpp>
 #include <webots/Receiver.hpp>
 #include <webots/Robot.hpp>
 #include <webots/utils/AnsiCodes.hpp>
 #include <webots/InertialUnit.hpp>
 
+#include <cstring>
 #include <algorithm>
 #include <iostream>
 #include <limits>
@@ -104,6 +106,7 @@ private:
    
   Mode mode;
   Orient orient;
+  Emitter *emitter;
   Receiver *receiver; 
   Motor *motors[2];
   GPS *gp;
@@ -127,6 +130,9 @@ Slave::Slave() {
   orient = NORTH;
   path1 = generatePath({{0,2},{8,2},{8,15},{19,15}});
    
+  emitter = getEmitter("emitter");
+  emitter->setChannel(1);
+
   receiver = getReceiver("receiver");
   receiver->enable(TIME_STEP);
   receiver->setChannel(0);
@@ -287,6 +293,7 @@ void Slave::run() {
   // robotOrientation();
   std::string prev_mess = "";
   std::string message;
+  std::string messOut("RB2!");
   // for ( int i =0;i<33;++i)
      exeCommand.push(1);
      exeCommand.push(1);
@@ -303,7 +310,10 @@ void Slave::run() {
     std::cout<<std::endl;
   while (this->step(TIME_STEP) != -1) {
    
-
+ if (!messOut.empty() ) { 
+      // std::cout<<"SENDING"<<std::endl;
+      emitter->send(messOut.c_str(), (int)strlen(messOut.c_str()) + 1);
+      }
 
     // turnLeft();
     // forward();

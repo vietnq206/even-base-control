@@ -15,10 +15,12 @@
 #include <webots/DistanceSensor.hpp>
 #include <webots/Motor.hpp>
 #include <webots/Receiver.hpp>
+#include <webots/Emitter.hpp>
 #include <webots/Robot.hpp>
 #include <webots/utils/AnsiCodes.hpp>
 #include <webots/InertialUnit.hpp>
 
+#include <cstring>
 #include <algorithm>
 #include <iostream>
 #include <limits>
@@ -105,6 +107,7 @@ private:
   Mode mode;
   Orient orient;
   Receiver *receiver; 
+  Emitter *emitter;
   Motor *motors[2];
   GPS *gp;
   Gyro *gr;
@@ -125,9 +128,12 @@ Slave::Slave() {
 
   mode = STOP;
   path1 = generatePath({{2,0},{2,10},{16,10},{16,19}});
-   
+  
+  emitter = getEmitter("emitter");
+  emitter->setChannel(1);
+
   receiver = getReceiver("receiver");
-  receiver->enable(TIME_STEP);
+  receiver->enable(TIME_STEP); 
   receiver->setChannel(0);
 
   motors[0] = getMotor("left wheel motor");
@@ -258,7 +264,6 @@ void Slave::forward(){
     switch (orient)
       {
       case NORTH:
-        
         if ( abs(currGPS[2] - startGPS[2]) > 0.1 ) reachTarget = true;
         break;
       case SOUTH:
@@ -281,12 +286,15 @@ void Slave::forward(){
 }
 void Slave::run() {
   // main loop
- 
+  int ackAskMove = 0;
   std::string prev_mess = "";
   std::string message;
   // for ( int i =0;i<33;++i)
   //   exeCommand.push(1);
   
+  std::string prev_messOut = "";
+  std::string messOut("");
+
   int indexPath = 1;
   float decision;
   point vecDesign;
@@ -295,14 +303,19 @@ void Slave::run() {
       std::cout<<"{"<<elm.locX<<","<<elm.locZ<<"},";
     }
     std::cout<<std::endl;
-  while (this->step(TIME_STEP) != -1) {
-   
+  messOut.assign(std::to_string(robotNum));
+  messOut.append(std::to_string(ackAskMove));
+
+  while (this->step(TIME_STEP) != -1 && indexPath < path1.size()) {
 
 
-    // turnLeft();
-    // forward();
-    // turnRight();
-     
+    if (!messOut.empty() ) { 
+      // std::cout<<"SENDING"<<std::endl;
+      emitter->send(messOut.c_str(), (int)strlen(messOut.c_str()) + 1);
+      messOut = "";
+    }
+
+
     while (receiver->getQueueLength() > 0) {
       message = ((const char *)receiver->getData());
       if(message.compare(robotNum,2,prev_mess))
@@ -313,13 +326,8 @@ void Slave::run() {
       receiver->nextPacket();
     }
     
-    // const double* currIMU = iu->getRollPitchYaw(); 
-
-    // std::cout<<"oritne :"<<currIMU[2]<<std::endl;
    
-    // robotOrientation();
-   
-    if (!exeCommand.empty()&& indexPath < path1.size())
+    if (!exeCommand.empty())
     {
       if(exeCommand.front() == 1)
       {
@@ -332,9 +340,15 @@ void Slave::run() {
           forward();
           exeCommand.pop();
           indexPath++;
+          ackAskMove == 0 ? ackAskMove = 1: ackAskMove = 0;
+
+          messOut.assign(std::to_string(robotNum));
+          messOut.append(std::to_string(ackAskMove));
         }
         else if( decision > 0) turnRight();
         else turnLeft();
+
+
       }
       else {
         exeCommand.pop();
@@ -343,9 +357,12 @@ void Slave::run() {
         vecOritent = getVectorOrient();
         
     }
-
-    else stop();
-    } 
+    else {
+      stop();
+      // messOut.assign(std::to_string(robotNum));
+      // messOut.append(std::to_string(ackAskMove));
+    }
+  } 
     
 }
 
