@@ -20,8 +20,7 @@ DEF robot_1 E-puck {
   translation 0.8 0 -1
   rotation 0 1 0 3.141592653589793
   name "robot_1"
-  controller ""
-  emitter_channel 0
+  controller "robot_controller"
   receiver_channel 0
   battery [
     0
@@ -42,8 +41,7 @@ DEF robot_2 E-puck {
   translation 1 -6.39682e-05 -0.8
   rotation 0 1 0 3.141592653589793
   name "robot_2"
-  controller "robot2_controller"
-  emitter_channel 0
+  controller ""
   receiver_channel 0
   battery [
     0
@@ -63,6 +61,9 @@ DEF robot_2 E-puck {
 }
 Robot {
   children [
+    Receiver {
+      channel 1
+    }
     Emitter {
       scale 4 4 4
     }
