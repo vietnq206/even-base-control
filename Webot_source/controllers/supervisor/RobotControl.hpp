@@ -233,9 +233,13 @@ void Driver::runSim(){
       {
         if(rbDoneEvent[i]){
           printRegisterMap();
-          releaseRegister(pathRobot[i][rbIndex[i]]);
+          releaseRegister(pathRobot[i][rbIndex[i]-1]);
+          std::cout<<"RELEASED MAP"<<std::endl;
+          printRegisterMap();
           rbIndex[i]++;
           robotRegister(pathRobot[i][rbIndex[i]],i);
+          std::cout<<"REGISTERMAP MAP"<<std::endl;
+          printRegisterMap();
            if (robots[i].askMove(pathRobot[i][rbIndex[i]],mapRegister))
             {
             //       std::cout<<"Robot "<< i<<std::endl;
