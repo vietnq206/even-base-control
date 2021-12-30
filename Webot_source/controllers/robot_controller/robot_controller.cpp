@@ -53,7 +53,7 @@ struct point{
     int locZ;
 };
 
-
+inline int ch2int(char c) { return int(c)-48; }
 std::vector<point> generatePath(std::vector<point> setPoint){
 
     std::vector<point> path;
@@ -288,45 +288,40 @@ void Slave::run() {
   // main loop
   int ackAskMove = 0;
   std::string prev_mess = "";
-  std::string message;
-  // for ( int i =0;i<33;++i)
-  //   exeCommand.push(1);
+  std::string message; 
   
   std::string prev_messOut = "";
   std::string messOut("");
 
   int indexPath = 1;
   float decision;
+  int locMessRb = (robotNum-1)*3;
   point vecDesign;
   point vecOritent = getVectorOrient();
   for (auto elm: path1){
       std::cout<<"{"<<elm.locX<<","<<elm.locZ<<"},";
     }
-    std::cout<<std::endl;
+  std::cout<<std::endl;
   messOut.assign(std::to_string(robotNum));
   messOut.append(std::to_string(ackAskMove));
 
   while (this->step(TIME_STEP) != -1 && indexPath < path1.size()) {
-
-
     if (!messOut.empty() ) { 
       // std::cout<<"SENDING"<<std::endl;
       emitter->send(messOut.c_str(), (int)strlen(messOut.c_str()) + 1);
-      messOut = "";
+      messOut = "";    
     }
-
 
     while (receiver->getQueueLength() > 0) {
       message = ((const char *)receiver->getData());
-      if(message.compare(robotNum,2,prev_mess))
+      if(message.compare(locMessRb,2,prev_mess))
       {
-        exeCommand.push(int(message[robotNum+1]) - 48);
-        prev_mess = message.substr(robotNum,2);
+        exeCommand.push(ch2int(message[locMessRb+2]));
+        prev_mess = message.substr(locMessRb,2);
       }
       receiver->nextPacket();
     }
-    
-   
+       
     if (!exeCommand.empty())
     {
       if(exeCommand.front() == 1)
@@ -334,9 +329,10 @@ void Slave::run() {
         vecDesign.locX = path1[indexPath].locX-path1[indexPath-1].locX;
         vecDesign.locZ = path1[indexPath].locZ-path1[indexPath-1].locZ;
         decision = -vecOritent.locX*vecDesign.locZ + vecOritent.locZ*vecDesign.locX;
-        std::cout<<"Decision of "<<indexPath<<" is :"<<decision<<std::endl;
+        // std::cout<<"Decision of "<<indexPath<<" is :"<<decision<<std::endl;
         if(decision==0) 
         {
+          std::cout<<"R1: Taking point: X "<<path1[indexPath].locX<<" and Y "<<path1[indexPath].locZ<<std::endl;
           forward();
           exeCommand.pop();
           indexPath++;
@@ -347,20 +343,15 @@ void Slave::run() {
         }
         else if( decision > 0) turnRight();
         else turnLeft();
-
-
       }
       else {
         exeCommand.pop();
       }
         stop();
         vecOritent = getVectorOrient();
-        
     }
     else {
       stop();
-      // messOut.assign(std::to_string(robotNum));
-      // messOut.append(std::to_string(ackAskMove));
     }
   } 
     

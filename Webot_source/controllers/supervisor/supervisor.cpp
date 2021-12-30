@@ -55,7 +55,7 @@ int main(int argc, char **argv) {
   std::vector<std::string> rbSet = {"robot_1","robot_2"};
    
   Driver *controller = new Driver(rbSet,{path1,path2});
-  controller->test();
+  controller->runSim();
   delete controller;
   return 0; 
    

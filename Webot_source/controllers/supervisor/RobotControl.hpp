@@ -34,7 +34,7 @@ struct point{
 
 
 
-
+inline int ch2int(char c) { return int(c)-48; }
 
 class RobotControl{
 private:
@@ -87,10 +87,10 @@ bool RobotControl::askMove(point askLoc, std::vector<std::vector<int>> mapRegist
 class Driver : public Supervisor {
 public:
   Driver(std::vector<std::string> rbSet,std::vector<std::vector<point>> path);
-  void run();
-  void robotRegister(std::vector<point> askLoc);
-  void releaseRegister(std::vector<point> setLocRobot );
-  void test();
+  void robotRegister(point askLoc, int rbNum);
+  void releaseRegister(point LocRobot);
+  void printRegisterMap();
+  void runSim();
   int calNorm1(point a,point b){   return (abs(a.locX - b.locX + abs(a.locZ-b.locZ))); };
 
 
@@ -111,15 +111,17 @@ private:
   std::vector<std::vector<point>> pathRobot;
 };
 
-void Driver::releaseRegister(std::vector<point> setLocRobot ){
-    for ( int row =0; row<SIZE_X ;++row){
-        for ( int col = 0; col<SIZE_Y ;++col ){
-            if ( mapRegister[row][col] != -1){
-                if (calNorm1(setLocRobot[mapRegister[row][col]],point{row,col}))
-                    mapRegister[row][col] = -1;
-            }
-        }
-    }
+void Driver::releaseRegister(point LocRobot ){
+    // for ( int row =0; row<SIZE_X ;++row){
+    //     for ( int col = 0; col<SIZE_Y ;++col ){
+    //         if ( mapRegister[row][col] != -1){
+    //             if (calNorm1(setLocRobot[mapRegister[row][col]],point{row,col}))
+    //                 mapRegister[row][col] = -1;
+    //         }
+    //     }
+    // }
+  mapRegister[LocRobot.locX][LocRobot.locZ] = -1;
+
 }
 Driver::Driver(std::vector<std::string> rbSet,std::vector<std::vector<point>> path) {
   timeStep = 128;
@@ -157,166 +159,109 @@ Driver::Driver(std::vector<std::string> rbSet,std::vector<std::vector<point>> pa
   keyboard->enable(timeStep);
 }
 
-void Driver::robotRegister(std::vector<point> askLoc){
-    for ( int rb = 0; rb < askLoc.size(); ++rb){
-        if (mapRegister[askLoc[rb].locX][askLoc[rb].locZ] == -1)  mapRegister[askLoc[rb].locX][askLoc[rb].locZ] = rb;
-    }
+void Driver::robotRegister(point askLoc, int rbNum){
+    // for ( int rb = 0; rb < askLoc.size(); ++rb){
+    //     if (mapRegister[askLoc[rb].locX][askLoc[rb].locZ] == -1)  mapRegister[askLoc[rb].locX][askLoc[rb].locZ] = rb;
+    // }
+  if(mapRegister[askLoc.locX][askLoc.locZ] == -1)
+    mapRegister[askLoc.locX][askLoc.locZ] = rbNum;
 }
 
+void Driver::printRegisterMap(){
+  
+      std::cout<<std::endl;
+      std::cout<<std::endl;
+      for ( int i=0;i<SIZE_X;i++){
+            for ( int j=0;j<SIZE_Y;j++){
+                std::cout<<mapRegister[i][j]<<" ";
+            }
+            std::cout<<std::endl;
+        }  
+}
 
+void Driver::runSim(){
 
-void Driver::test(){
-  double LocR1[3] = {0.8,0,-1};
-  double LocR2[3] = {1,0,-0.8};
-
-  std::vector<std::string> ackAskRobot;
+  
+  std::vector<char> ackAskRobot;
+  std::vector<bool> rbDoneEvent;
+  std::vector<int> rbIndex;
+  std::vector<int> ackMove;
 
   for ( int i = 0; i< numRobot; ++i )
   {
-    ackAskRobot.push_back("0");
+    ackAskRobot.push_back('0');
+    rbDoneEvent.push_back(false);
+    rbIndex.push_back(1);
+    ackMove.push_back(0);
   }
 
-  // robots[0].setLocation(LocR1);
-  // robots[1].setLocation(LocR2);
-  std::vector<point> set = {pathRobot[0][0],pathRobot[1][0]};
-      //Robot1 sequence of moving
-    std::vector<point> set1 = pathRobot[0];
-    //Robot2 sequence of moving
-    std::vector<point> set2 = pathRobot[1];
-  robotRegister(set);
-
-  std::string message("");
+  std::string messOut("#11#11#11"); //starting signal 
+  std::string messOut_prev("");
   std::string messIn("");
+
+  //Setting channel for emmiter
   emitter->setChannel(0);
-  int r1Indx = 1;
-  int r2Indx = 1;
-  int t1 = 0;
-  int t2 = 0;
+
   while(step(timeStep) != -1)
     {
-      
-
-
-
-
-      // std::cout<<"PRESEND"<<std::endl;
-      if (!message.empty() ) { 
-      // std::cout<<"SENDING"<<std::endl;
-      emitter->send(message.c_str(), (int)strlen(message.c_str()) + 1);
+      for ( int i = 0; i< numRobot; ++i )
+        { 
+          rbDoneEvent[i] = false;
+        }
+      if (!messOut.empty() && messOut.compare(messOut_prev) ) { 
+        // std::cout<<"SENDING"<<std::endl;
+        std::cout<<"MESS send from Supervisor: "<<messOut<<std::endl;
+        emitter->send(messOut.c_str(), (int)strlen(messOut.c_str()) + 1);
+        messOut_prev = messOut;
       }
-      message.assign("#");
-      message.append(std::to_string(t1));
-      
-      message.append("1#11#13"); 
-      t1 == 0 ? t1 = 1: t1 = 0;
-      
-      // if(t1 == 0 ) t1 = 1;
-      // else t1 = 0;
-
-      if (receiver->getQueueLength() > 0) {
-      messIn = ((const char *)receiver->getData());
-      std::cout<<"REEIVED : "<<messIn<<std::endl;
-      receiver->nextPacket();
-    }
-
-
-
-
-      int k = keyboard->getKey();
-      if (k == 'N')
+      while(receiver->getQueueLength() > 0) {
+        messIn = ((const char *)receiver->getData());
+        if(!messIn.empty())
+        {
+        std::cout<<"Mess into Supervisor : "<<messIn<<std::endl;
+          if (ackAskRobot[ch2int(messIn[0])-1] != messIn[1]) 
+          {
+            // rbDoneEvent[ch2int(messIn[0])-1] ? rbDoneEvent[ch2int(messIn[0])-1] = false : rbDoneEvent[ch2int(messIn[0])-1] = true;
+            rbDoneEvent[ch2int(messIn[0])-1] = true; //true mean that the robot done the job and asking for new movement
+            ackAskRobot[ch2int(messIn[0])-1] = messIn[1];
+          }
+        }
+        receiver->nextPacket();
+      }
+      messOut = "";
+      for( int i =0; i<numRobot;++i)
       {
-        // set of requesting moves
-        std::vector<point> setAsk ;
-        
-        setAsk.push_back(set1[r1Indx]);
-        setAsk.push_back(set2[r2Indx]);
-
-        //Robot try to registor the next location
-        robotRegister(setAsk);
-
-        //Robot try to get the next move
-        if (robots[0].askMove(set1[r1Indx],mapRegister)&& r1Indx<set1.size()-1) r1Indx++;
-        if (robots[1].askMove(set2[r2Indx],mapRegister)&&r2Indx<set2.size()-1) r2Indx++;
-
-        set[0] = set1[r1Indx-1];
-        set[1] = set2[r2Indx-1];
-        LocR1[0] = 1 - set[0].locX*0.1;
-        LocR1[2] = -1 + set[0].locZ*0.1;
-
-        LocR2[0] = 1 - set[1].locX*0.1;
-        LocR2[2] = -1 + set[1].locZ*0.1;
-
-        robots[0].setLocation(LocR1);
-        robots[1].setLocation(LocR2);
-
-
-
-        //Rekease the register if robot move out
-        releaseRegister(set); 
+        if(rbDoneEvent[i]){
+          printRegisterMap();
+          releaseRegister(pathRobot[i][rbIndex[i]]);
+          rbIndex[i]++;
+          robotRegister(pathRobot[i][rbIndex[i]],i);
+           if (robots[i].askMove(pathRobot[i][rbIndex[i]],mapRegister))
+            {
+            //       std::cout<<"Robot "<< i<<std::endl;
+            // std::cout<<"HAHAHAH1"<<std::endl;
+            ackMove[i]  == 0 ? ackMove[i]  = 1: ackMove[i]  = 0;
+            }
+          }
+          else if ( mapRegister[pathRobot[i][rbIndex[i]].locX][pathRobot[i][rbIndex[i]].locZ] != i)
+          {
+            robotRegister(pathRobot[i][rbIndex[i]],i);
+           if (robots[i].askMove(pathRobot[i][rbIndex[i]],mapRegister))
+            {
+              // std::cout<<"Robot "<< i<<std::endl;
+              // std::cout<<"HAHAHAH2 "<< rbIndex[i]<<std::endl;
+              ackMove[i] == 0 ? ackMove[i]  = 1: ackMove[i]  = 0;
+            }
+          }
+        messOut.append("#");
+        messOut.append(std::to_string(ackMove[i] ));
+        messOut.append("1");
       }
 
     }
 
 }
 
-void Driver::run() {
-  std::string previous_message("");
-  std::string message("");
-
-  displayHelp();
-
-  // main loop
-  while (step(timeStep) != -1) {
-
-    // Read sensors; update message according to the pressed keyboard key
-    int k = keyboard->getKey();
-    switch (k) {
-      case 'C':
-        std::cout<<"channel 0"<<std::endl;
-        emitter->setChannel(0);
-        break;
-      case 'V':
-        std::cout<<"channel 1"<<std::endl;
-        emitter->setChannel(1);
-        break;
-      case 'A':
-        
-        message.assign("avoid obstacles");
-        break;
-      case 'F':
-        message.assign("move forward");
-        break;
-      case 'S':
-        message.assign("stop");
-        break;
-      case 'T':
-        message.assign("turn");
-        break;
-      case 'I':
-        displayHelp();
-        break;
-      case 'G': {
-        const double *translationValues = robots[0].getLocation();
-        std::cout << "ROBOT1 is located at (" << translationValues[0] << "," << translationValues[2] << ")" << std::endl;
-        break;
-      }
-      case 'R':
-        std::cout << "Teleport ROBOT1 at (" << x << "," << z << ")" << std::endl;
-       // translationField->setSFVec3f(translation);
-        robots[0].setLocation(translation);
-        break;
-      default:
-        message.clear();
-    }
-
-    // send actuators commands; send a new message through the emitter device
-    if (!message.empty() && message.compare(previous_message)) {
-      previous_message.assign(message);
-      std::cout << "Please, " << message.c_str() << std::endl;
-      emitter->send(message.c_str(), (int)strlen(message.c_str()) + 1);
-    }
-  }
-}
 void Driver::displayHelp() {
   std::string s("Commands:\n"
            " I for displaying the commands\n"
