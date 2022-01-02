@@ -47,16 +47,16 @@ double tmp[4] = {0,1,0,0};
 
 
 public:
-  RobotControl(Node* rb, int rbID);
+  RobotControl( Node* rb, int rbID);
   ~RobotControl();
   const double* getLocation();
-  void setLocation(double* location);
-  bool askMove(point askLoc, std::vector<std::vector<int>> mapRegister);
+  void setLocation(const double* location);
+  bool askMove(const point& askLoc, const std::vector<std::vector<int>>& mapRegister) const;
 
 };
 
 
-RobotControl::RobotControl(Node* rb, int rbID){ 
+RobotControl::RobotControl( Node* rb, int rbID){ 
   robot = rb;
   robotID = rbID;
   // this->robotID = rbID;
@@ -66,14 +66,14 @@ RobotControl::RobotControl(Node* rb, int rbID){
 const double* RobotControl::getLocation(){ 
    return translationField->getSFVec3f();
  }
-void RobotControl::setLocation(double* location){
+void RobotControl::setLocation(const double* location){
   translationField->setSFVec3f(location);
   rotationField->setSFRotation(tmp);
 }
 
 RobotControl::~RobotControl(){ 
 }
-bool RobotControl::askMove(point askLoc, std::vector<std::vector<int>> mapRegister){
+bool RobotControl::askMove(const point& askLoc, const std::vector<std::vector<int>>& mapRegister)  const{
     if ( mapRegister[askLoc.locX][askLoc.locZ] == robotID) return true;
     else return false;
 }
@@ -86,12 +86,12 @@ bool RobotControl::askMove(point askLoc, std::vector<std::vector<int>> mapRegist
 
 class Driver : public Supervisor {
 public:
-  Driver(std::vector<std::string> rbSet,std::vector<std::vector<point>> path);
-  void robotRegister(point askLoc, int rbNum);
-  void releaseRegister(point LocRobot);
-  void printRegisterMap();
+  Driver(const std::vector<std::string>& rbSet,const std::vector<std::vector<point>>& path);
+  void robotRegister(const point* askLoc,const int& rbNum);
+  void releaseRegister(const point* LocRobot);
+  void printRegisterMap() const;
   void runSim();
-  int calNorm1(point a,point b){   return (abs(a.locX - b.locX + abs(a.locZ-b.locZ))); };
+  int calNorm1(const point* a,const point* b){   return (abs(a->locX - b->locX + abs(a->locZ-b->locZ))); };
 
 
 private:
@@ -111,7 +111,7 @@ private:
   std::vector<std::vector<point>> pathRobot;
 };
 
-void Driver::releaseRegister(point LocRobot ){
+void Driver::releaseRegister(const point* LocRobot ){
     // for ( int row =0; row<SIZE_X ;++row){
     //     for ( int col = 0; col<SIZE_Y ;++col ){
     //         if ( mapRegister[row][col] != -1){
@@ -120,10 +120,10 @@ void Driver::releaseRegister(point LocRobot ){
     //         }
     //     }
     // }
-  mapRegister[LocRobot.locX][LocRobot.locZ] = -1;
+  mapRegister[LocRobot->locX][LocRobot->locZ] = -1;
 
 }
-Driver::Driver(std::vector<std::string> rbSet,std::vector<std::vector<point>> path) {
+Driver::Driver(const std::vector<std::string>& rbSet,const std::vector<std::vector<point>>& path) {
   timeStep = 128;
   numRobot = rbSet.size();
   x = 0.1f;
@@ -159,15 +159,15 @@ Driver::Driver(std::vector<std::string> rbSet,std::vector<std::vector<point>> pa
   keyboard->enable(timeStep);
 }
 
-void Driver::robotRegister(point askLoc, int rbNum){
+void Driver::robotRegister(const point* askLoc,const int& rbNum){
     // for ( int rb = 0; rb < askLoc.size(); ++rb){
     //     if (mapRegister[askLoc[rb].locX][askLoc[rb].locZ] == -1)  mapRegister[askLoc[rb].locX][askLoc[rb].locZ] = rb;
     // }
-  if(mapRegister[askLoc.locX][askLoc.locZ] == -1)
-    mapRegister[askLoc.locX][askLoc.locZ] = rbNum;
+  if(mapRegister[askLoc->locX][askLoc->locZ] == -1)
+    mapRegister[askLoc->locX][askLoc->locZ] = rbNum;
 }
 
-void Driver::printRegisterMap(){
+void Driver::printRegisterMap() const{
   
       std::cout<<std::endl;
       std::cout<<std::endl;
@@ -233,11 +233,11 @@ void Driver::runSim(){
       {
         if(rbDoneEvent[i]){
           printRegisterMap();
-          releaseRegister(pathRobot[i][rbIndex[i]-1]);
+          releaseRegister(&pathRobot[i][rbIndex[i]-1]);
           std::cout<<"RELEASED MAP"<<std::endl;
           printRegisterMap();
           rbIndex[i]++;
-          robotRegister(pathRobot[i][rbIndex[i]],i);
+          robotRegister(&pathRobot[i][rbIndex[i]],i);
           std::cout<<"REGISTERMAP MAP"<<std::endl;
           printRegisterMap();
            if (robots[i].askMove(pathRobot[i][rbIndex[i]],mapRegister))
@@ -249,7 +249,7 @@ void Driver::runSim(){
           }
           else if ( mapRegister[pathRobot[i][rbIndex[i]].locX][pathRobot[i][rbIndex[i]].locZ] != i)
           {
-            robotRegister(pathRobot[i][rbIndex[i]],i);
+            robotRegister(&pathRobot[i][rbIndex[i]],i);
            if (robots[i].askMove(pathRobot[i][rbIndex[i]],mapRegister))
             {
               // std::cout<<"Robot "<< i<<std::endl;
