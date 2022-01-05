@@ -31,6 +31,11 @@ struct point{
     int locX;
     int locZ;
 };
+bool operator==(const point& p1, const point& p2 )
+{
+  if ( p1.locX == p2.locX && p1.locZ == p2.locZ) return true;
+  else return false;
+}
 
 
 
@@ -195,6 +200,8 @@ void Driver::runSim(){
     ackMove.push_back(0);
   }
 
+  std::cout<<"num Robot:"<<numRobot<<std::endl;
+   
   std::string messOut("#11#11#11"); //starting signal 
   std::string messOut_prev("");
   std::string messIn("");

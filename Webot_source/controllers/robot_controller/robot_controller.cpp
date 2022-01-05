@@ -52,40 +52,42 @@ struct point{
     int locX;
     int locZ;
 };
+bool operator==(const point& p1, const point& p2 )
+{
+  if ( p1.locX == p2.locX && p1.locZ == p2.locZ) return true;
+  else return false;
+}
+
+
+
 
 inline int ch2int(char c) { return int(c)-48; }
 std::vector<point> generatePath(std::vector<point> setPoint){
 
-    std::vector<point> path;
-    point tmp,start,end;
-    end = setPoint[0];
-    
-    for (auto elm : setPoint)
-    {
-    start = end;
-    end = elm;    
-    if (start.locX != end.locX){
-      for ( int i=start.locX;i<end.locX;++i)
-        {
-            tmp.locX = i;
-            tmp.locZ = start.locZ;
-            path.push_back(tmp);
-        }       
-    }
-    else
-    {
-      for ( int i=start.locZ;i<end.locZ;++i)
-        {
-            tmp.locZ = i;
-            tmp.locX = start.locX;
-            path.push_back(tmp);
-        }       
-    }
-    }
-     path.push_back(setPoint[setPoint.size()-1]);
-    
-    return path;
+  std::vector<point> path;
+  point prev_p;
+  int itvX, itvZ;
+  prev_p = setPoint[0];
+  
+  for (int i=1;i<setPoint.size();++i)
+  {
+    setPoint[i].locX == prev_p.locX ? itvX = 0 :  itvX = int((setPoint[i].locX - prev_p.locX)/abs(setPoint[i].locX - prev_p.locX));
+    setPoint[i].locZ == prev_p.locZ ? itvZ = 0 :  itvZ = int((setPoint[i].locZ - prev_p.locZ)/abs(setPoint[i].locZ - prev_p.locZ));
+      
+    while(!(prev_p == setPoint[i]))
+      {
+        path.push_back(prev_p);
+        prev_p.locX += itvX;  
+        prev_p.locZ += itvZ;  
+
+      }
+    prev_p = setPoint[i];  
+  }
+    path.push_back(setPoint[setPoint.size()-1]);
+  
+  return path;
 }
+
 
 
 
@@ -113,6 +115,7 @@ private:
   Gyro *gr;
   InertialUnit *iu;
   int robotNum;
+  int ackAskMove;
   std::queue<int> exeCommand;
   std::vector<point> path1;
 };
@@ -127,7 +130,7 @@ Slave::Slave() {
 
 
   mode = STOP;
-  path1 = generatePath({{2,0},{2,10},{16,10},{16,19}});
+  path1 = generatePath({{2,0},{2,10},{16,10},{16,19},{18,19},{18,7},{4,7},{4,0}});
   
   emitter = getEmitter("emitter");
   emitter->setChannel(1);
@@ -147,6 +150,7 @@ Slave::Slave() {
   
   robotOrientation();
   robotNum = 1;
+  ackAskMove = 0;
 }
 
 point Slave::getVectorOrient(){
@@ -156,6 +160,7 @@ point Slave::getVectorOrient(){
   return {1,0};
 }
 void Slave::turnLeft(){
+  std::cout<<"Robot 1: Turning Left!"<<std::endl;
   const double* currIMU = iu->getRollPitchYaw();
   double targetYall = currIMU[2] + PI2;
   if ( targetYall > PI)
@@ -166,7 +171,7 @@ void Slave::turnLeft(){
   while(this->step(TIME_STEP) != -1){
 
     currIMU = iu->getRollPitchYaw();
-    std::cout<<"X ="<<currIMU[0]<<"Y= "<<currIMU[1]<<" Z = "<<currIMU[2]<<std::endl;
+    // std::cout<<"X ="<<currIMU[0]<<"Y= "<<currIMU[1]<<" Z = "<<currIMU[2]<<std::endl;
     
     
     if (abs(currIMU[2]-targetYall)<0.05)
@@ -211,6 +216,8 @@ void Slave::robotOrientation(){
 }
 
 void Slave::turnRight(){
+  std::cout<<"Robot 1: Turning Right!"<<std::endl;
+
   const double* currIMU = iu->getRollPitchYaw();
   double targetYall = currIMU[2] - PI2;
   if ( targetYall < -PI)
@@ -243,39 +250,65 @@ void Slave::stop(){
 
  
 void Slave::forward(){ 
+  std::cout<<"Robot 1: Going forward !"<<std::endl;
+
   double startGPS[3];
   const double* currGPS = gp->getValues();
   bool reachTarget = false;
   motors[0]->setVelocity(MAX_SPEED); 
   motors[1]->setVelocity(MAX_SPEED);
   robotOrientation();
+  std::string messOut("");
+  bool signalSent = false;
 
   if ( this->step(TIME_STEP) != -1){
     for ( int i =0; i < 3 ; i++){startGPS[i] = currGPS[i];}
   }
-
-
-  while(this->step(TIME_STEP) != -1 && !reachTarget)
+  messOut.assign(std::to_string(robotNum));
+  messOut.append(std::to_string(ackAskMove));
+  
+    while(this->step(TIME_STEP) != -1 && !reachTarget)
   {
     // std::cout<<"Start :"<<startGPS[2]<<std::endl;
     // std::cout<<"Current :"<<currGPS[2]<<std::endl;
-        currGPS = gp->getValues();
-      
+        currGPS = gp->getValues();  
     switch (orient)
       {
       case NORTH:
         if ( abs(currGPS[2] - startGPS[2]) > 0.1 ) reachTarget = true;
+        if ( abs(currGPS[2] - startGPS[2]) > 0.05 && !signalSent) 
+        {
+            emitter->send(messOut.c_str(), (int)strlen(messOut.c_str()) + 1);
+            messOut = "";
+            signalSent = true;
+        }
         break;
       case SOUTH:
         if ( abs(currGPS[2] - startGPS[2]) > 0.1) reachTarget = true;
+        if ( abs(currGPS[2] - startGPS[2]) > 0.05 && !signalSent) 
+                {
+            emitter->send(messOut.c_str(), (int)strlen(messOut.c_str()) + 1);
+            messOut = "";
+            signalSent = true;
+        }
         break;
-      case WEST:
-        if ( abs(currGPS[0] - startGPS[0]) > 0.1) reachTarget = true;
+      case WEST:   
+       if ( abs(currGPS[0] - startGPS[0]) > 0.1) reachTarget = true;
+        if ( abs(currGPS[0] - startGPS[0]) > 0.05 && !signalSent) 
+                {
+            emitter->send(messOut.c_str(), (int)strlen(messOut.c_str()) + 1);
+            messOut = "";
+            signalSent = true;
+        }       
         break;
       case EAST:
         if ( abs(currGPS[0] - startGPS[0]) > 0.1) reachTarget = true;
-        break;
-      
+         if ( abs(currGPS[0] - startGPS[0]) > 0.05 && !signalSent) 
+                {
+            emitter->send(messOut.c_str(), (int)strlen(messOut.c_str()) + 1);
+            messOut = "";
+            signalSent = true;
+        } 
       default:
         break;
       }
@@ -284,9 +317,10 @@ void Slave::forward(){
 
  
 }
+
 void Slave::run() {
-  // main loop
-  int ackAskMove = 0;
+  // // main loop
+  // int ackAskMove = 0;
   std::string prev_mess = "";
   std::string message; 
   
@@ -308,7 +342,7 @@ void Slave::run() {
   while (this->step(TIME_STEP) != -1 && indexPath < path1.size()) {
     if (!messOut.empty() ) { 
       // std::cout<<"SENDING"<<std::endl;
-      emitter->send(messOut.c_str(), (int)strlen(messOut.c_str()) + 1);
+      // emitter->send(messOut.c_str(), (int)strlen(messOut.c_str()) + 1);
       messOut = "";    
     }
 
@@ -333,10 +367,15 @@ void Slave::run() {
         if(decision==0) 
         {
           std::cout<<"R1: Taking point: X "<<path1[indexPath].locX<<" and Y "<<path1[indexPath].locZ<<std::endl;
+          ackAskMove == 0 ? ackAskMove = 1: ackAskMove = 0;
+          std::cout<<" Ack R1 - 2: "<<ackAskMove<<std::endl;
+
           forward();
+
+      std::cout<<" Ack R1 - after: "<<ackAskMove<<std::endl;
           exeCommand.pop();
           indexPath++;
-          ackAskMove == 0 ? ackAskMove = 1: ackAskMove = 0;
+          
 
           messOut.assign(std::to_string(robotNum));
           messOut.append(std::to_string(ackAskMove));

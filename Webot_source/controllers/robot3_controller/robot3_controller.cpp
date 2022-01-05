@@ -126,7 +126,7 @@ Slave::Slave() {
 
   mode = STOP;
   orient = NORTH;
-  path = generatePath({{0,2},{8,2},{8,15},{19,15},{19,17},{4,17},{4,3},{0,3}});
+  path = generatePath({{0,5},{12,5},{12,14},{19,14},{19,9},{0,9}});
    
   emitter = getEmitter("emitter");
   emitter->setChannel(1);
@@ -144,7 +144,7 @@ Slave::Slave() {
   motors[0]->setVelocity(0.0);
   motors[1]->setVelocity(0.0);
    
-  robotNum = 2;
+  robotNum = 3;
   ackAskMove = 0;
 }
 
@@ -258,6 +258,8 @@ void Slave::forward(){
   messOut.assign(std::to_string(robotNum));
   messOut.append(std::to_string(ackAskMove));
   
+      
+
     while(this->step(TIME_STEP) != -1 && !reachTarget)
   {
     // std::cout<<"Start :"<<startGPS[2]<<std::endl;
@@ -295,7 +297,7 @@ void Slave::forward(){
       case EAST:
         if ( abs(currGPS[0] - startGPS[0]) > 0.1) reachTarget = true;
         if ( abs(currGPS[0] - startGPS[0]) > 0.05 && !signalSent) 
-                {
+        {
             emitter->send(messOut.c_str(), (int)strlen(messOut.c_str()) + 1);
             messOut = "";
             signalSent = true;
@@ -304,6 +306,7 @@ void Slave::forward(){
         break;
       }
   }
+  std::cout<<" Ack R3 - in forward: "<<ackAskMove<<std::endl;
   stop();
 
  
@@ -330,7 +333,7 @@ void Slave::run() {
 
 
   while (this->step(TIME_STEP) != -1) {
-   
+      std::cout<<" Ack R3: "<<ackAskMove<<std::endl;
      if (!messOut.empty() ) { 
       // std::cout<<"SENDING"<<std::endl;
       // emitter->send(messOut.c_str(), (int)strlen(messOut.c_str()) + 1);
@@ -356,9 +359,15 @@ void Slave::run() {
         // std::cout<<"Decision of "<<indexPath<<" is :"<<decision<<std::endl;
         if(decision==0) 
         {
-          std::cout<<"R2: Taking point: X "<<path[indexPath].locX<<" and Y "<<path[indexPath].locZ<<std::endl;
+          std::cout<<"R3: Taking point: X "<<path[indexPath].locX<<" and Y "<<path[indexPath].locZ<<std::endl;
+          
           ackAskMove == 0 ? ackAskMove = 1: ackAskMove = 0;
+      std::cout<<" Ack R3 - 2: "<<ackAskMove<<std::endl;
+
           forward();
+
+      std::cout<<" Ack R3 - after: "<<ackAskMove<<std::endl;
+
           exeCommand.pop();
           indexPath++;
           
