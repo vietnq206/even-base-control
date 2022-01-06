@@ -46,8 +46,9 @@ private:
 Node* robot;
 Field *translationField, *rotationField; 
 bool activeMode;
-std::vector<point> pathJobs;
+const std::vector<point>* pathJobs;
 int robotID;
+int currLoc;
 double tmp[4] = {0,1,0,0};
 
 
@@ -55,31 +56,66 @@ public:
   RobotControl( Node* rb, int rbID);
   ~RobotControl();
   const double* getLocation();
-  void setLocation(const double* location);
-  bool askMove(const point& askLoc, const std::vector<std::vector<int>>& mapRegister) const;
-
+  void setLocation(int loc);
+  bool askMove(int loc, const std::vector<std::vector<int>>& mapRegister) ;
+  void setPath(const std::vector<point>* path) ;
+  const point* getPath(int idx);
+  void printPath() const;
 };
 
 
 RobotControl::RobotControl( Node* rb, int rbID){ 
   robot = rb;
   robotID = rbID;
+  currLoc = 0;
+  
   // this->robotID = rbID;
   translationField = robot->getField("translation"); 
   rotationField = robot->getField("rotation");
+  
 }
 const double* RobotControl::getLocation(){ 
    return translationField->getSFVec3f();
  }
-void RobotControl::setLocation(const double* location){
+void RobotControl::setLocation(int loc){
+
+  if( loc = -1) loc = currLoc;
+  double location[3];
+  location[0] = 1 - pathJobs->at(loc).locX*0.1;
+  location[1] = 0;
+  location[2] = -1 + pathJobs->at(loc).locZ*0.1;
+
+  std::cout<<"Loc: "<<location[0]<<","<<location[2]<<std::endl;
+
   translationField->setSFVec3f(location);
-  rotationField->setSFRotation(tmp);
+  // rotationField->setSFRotation(tmp);
+}
+void RobotControl::setPath(const std::vector<point>* path) {
+  pathJobs = path;
+  setLocation(currLoc);
+}
+const point* RobotControl::getPath(int idx){
+  return &pathJobs->at(idx);
 }
 
+void RobotControl::printPath() const{
+  int size = (*pathJobs).size();
+  std::cout<<"SIZEEE: "<<std::endl;
+  for( int i=0;i<size;++i){
+    std::cout<<"{"<<pathJobs->at(i).locX<<","<<pathJobs->at(i).locZ<<"},";
+  }
+  std::cout<<std::endl;
+}
 RobotControl::~RobotControl(){ 
 }
-bool RobotControl::askMove(const point& askLoc, const std::vector<std::vector<int>>& mapRegister)  const{
-    if ( mapRegister[askLoc.locX][askLoc.locZ] == robotID) return true;
+bool RobotControl::askMove(int loc, const std::vector<std::vector<int>>& mapRegister)  {
+    if ( mapRegister[pathJobs->at(loc).locX][pathJobs->at(loc).locZ] == robotID) 
+    {
+      // if( currLoc%10 == 0)
+       setLocation(currLoc);
+      currLoc++;
+      return true;
+    }
     else return false;
 }
 
@@ -91,7 +127,7 @@ bool RobotControl::askMove(const point& askLoc, const std::vector<std::vector<in
 
 class Driver : public Supervisor {
 public:
-  Driver(const std::vector<std::string>& rbSet,const std::vector<std::vector<point>>& path);
+  Driver(const std::vector<std::string>& rbSet,std::vector<std::vector<point>>& path);
   void robotRegister(const point* askLoc,const int& rbNum);
   void releaseRegister(const point* LocRobot);
   void printRegisterMap() const;
@@ -128,7 +164,7 @@ void Driver::releaseRegister(const point* LocRobot ){
   mapRegister[LocRobot->locX][LocRobot->locZ] = -1;
 
 }
-Driver::Driver(const std::vector<std::string>& rbSet,const std::vector<std::vector<point>>& path) {
+Driver::Driver(const std::vector<std::string>& rbSet,std::vector<std::vector<point>>& path) {
   timeStep = 128;
   numRobot = rbSet.size();
   x = 0.1f;
@@ -158,6 +194,8 @@ Driver::Driver(const std::vector<std::string>& rbSet,const std::vector<std::vect
 
   for (int idx =0; idx < numRobot; ++idx){
     robots.push_back({getFromDef(rbSet[idx]),idx}); 
+    robots[idx].setPath(&pathRobot[idx]);
+    robots[idx].printPath();
   }
 
   keyboard = getKeyboard();
@@ -238,26 +276,29 @@ void Driver::runSim(){
       messOut = "";
       for( int i =0; i<numRobot;++i)
       {
+        // std::cout<<" POinter robot :"<<i<<" is {"<<robots[i].getPath(0)->locX <<","<<robots[i].getPath(0)->locZ<<"}"<<std::endl;
+
+
         if(rbDoneEvent[i]){
           printRegisterMap();
-          releaseRegister(&pathRobot[i][rbIndex[i]-1]);
+          releaseRegister(robots[i].getPath(rbIndex[i]-1));
           std::cout<<"RELEASED MAP"<<std::endl;
           printRegisterMap();
           rbIndex[i]++;
-          robotRegister(&pathRobot[i][rbIndex[i]],i);
+          robotRegister(robots[i].getPath(rbIndex[i]),i);
           std::cout<<"REGISTERMAP MAP"<<std::endl;
           printRegisterMap();
-           if (robots[i].askMove(pathRobot[i][rbIndex[i]],mapRegister))
+           if (robots[i].askMove(rbIndex[i],mapRegister))
             {
             //       std::cout<<"Robot "<< i<<std::endl;
             // std::cout<<"HAHAHAH1"<<std::endl;
             ackMove[i]  == 0 ? ackMove[i]  = 1: ackMove[i]  = 0;
             }
           }
-          else if ( mapRegister[pathRobot[i][rbIndex[i]].locX][pathRobot[i][rbIndex[i]].locZ] != i)
+          else if ( mapRegister[robots[i].getPath(rbIndex[i])->locX][robots[i].getPath(rbIndex[i])->locZ] != i)
           {
-            robotRegister(&pathRobot[i][rbIndex[i]],i);
-           if (robots[i].askMove(pathRobot[i][rbIndex[i]],mapRegister))
+            robotRegister(robots[i].getPath(rbIndex[i]),i);
+           if (robots[i].askMove(rbIndex[i],mapRegister))
             {
               // std::cout<<"Robot "<< i<<std::endl;
               // std::cout<<"HAHAHAH2 "<< rbIndex[i]<<std::endl;

@@ -60,7 +60,6 @@ bool operator==(const point& p1, const point& p2 )
 
 
 
-
 inline int ch2int(char c) { return int(c)-48; }
 std::vector<point> generatePath(std::vector<point> setPoint){
 
@@ -278,7 +277,7 @@ void Slave::forward(){
         if ( abs(currGPS[2] - startGPS[2]) > 0.1 ) reachTarget = true;
         if ( abs(currGPS[2] - startGPS[2]) > 0.05 && !signalSent) 
         {
-            emitter->send(messOut.c_str(), (int)strlen(messOut.c_str()) + 1);
+            // emitter->send(messOut.c_str(), (int)strlen(messOut.c_str()) + 1);
             messOut = "";
             signalSent = true;
         }
@@ -287,7 +286,7 @@ void Slave::forward(){
         if ( abs(currGPS[2] - startGPS[2]) > 0.1) reachTarget = true;
         if ( abs(currGPS[2] - startGPS[2]) > 0.05 && !signalSent) 
                 {
-            emitter->send(messOut.c_str(), (int)strlen(messOut.c_str()) + 1);
+            // emitter->send(messOut.c_str(), (int)strlen(messOut.c_str()) + 1);
             messOut = "";
             signalSent = true;
         }
@@ -296,7 +295,7 @@ void Slave::forward(){
        if ( abs(currGPS[0] - startGPS[0]) > 0.1) reachTarget = true;
         if ( abs(currGPS[0] - startGPS[0]) > 0.05 && !signalSent) 
                 {
-            emitter->send(messOut.c_str(), (int)strlen(messOut.c_str()) + 1);
+            // emitter->send(messOut.c_str(), (int)strlen(messOut.c_str()) + 1);
             messOut = "";
             signalSent = true;
         }       
@@ -305,7 +304,7 @@ void Slave::forward(){
         if ( abs(currGPS[0] - startGPS[0]) > 0.1) reachTarget = true;
          if ( abs(currGPS[0] - startGPS[0]) > 0.05 && !signalSent) 
                 {
-            emitter->send(messOut.c_str(), (int)strlen(messOut.c_str()) + 1);
+            // emitter->send(messOut.c_str(), (int)strlen(messOut.c_str()) + 1);
             messOut = "";
             signalSent = true;
         } 
@@ -342,7 +341,7 @@ void Slave::run() {
   while (this->step(TIME_STEP) != -1 && indexPath < path1.size()) {
     if (!messOut.empty() ) { 
       // std::cout<<"SENDING"<<std::endl;
-      // emitter->send(messOut.c_str(), (int)strlen(messOut.c_str()) + 1);
+      emitter->send(messOut.c_str(), (int)strlen(messOut.c_str()) + 1);
       messOut = "";    
     }
 
