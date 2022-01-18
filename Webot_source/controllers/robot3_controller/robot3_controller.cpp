@@ -59,30 +59,38 @@ bool operator==(const point& p1, const point& p2 )
 }
 
 inline int ch2int(char c) { return int(c)-48; }
-std::vector<point> generatePath(std::vector<point> setPoint){
+std::vector<point> generatePath(std::vector<point> setPoint, int freq){
 
-  std::vector<point> path;
-  point prev_p;
-  int itvX, itvZ;
-  prev_p = setPoint[0];
-  
-  for (int i=1;i<setPoint.size();++i)
-  {
-    setPoint[i].locX == prev_p.locX ? itvX = 0 :  itvX = int((setPoint[i].locX - prev_p.locX)/abs(setPoint[i].locX - prev_p.locX));
-    setPoint[i].locZ == prev_p.locZ ? itvZ = 0 :  itvZ = int((setPoint[i].locZ - prev_p.locZ)/abs(setPoint[i].locZ - prev_p.locZ));
+    std::vector<point> path;
+    point prev_p;
+    int itvX, itvZ;
+    
+    
+    for ( int idx = 0; idx < freq; idx ++)
+    
+    {
+            prev_p = setPoint[0];
       
-    while(!(prev_p == setPoint[i]))
+      for (int i=1;i<setPoint.size();++i)
       {
-        path.push_back(prev_p);
-        prev_p.locX += itvX;  
-        prev_p.locZ += itvZ;  
-
-      }
-    prev_p = setPoint[i];  
-  }
-    path.push_back(setPoint[setPoint.size()-1]);
+        setPoint[i].locX == prev_p.locX ? itvX = 0 :  itvX = int((setPoint[i].locX - prev_p.locX)/abs(setPoint[i].locX - prev_p.locX));
+        setPoint[i].locZ == prev_p.locZ ? itvZ = 0 :  itvZ = int((setPoint[i].locZ - prev_p.locZ)/abs(setPoint[i].locZ - prev_p.locZ));
+          
+        while(!(prev_p == setPoint[i]))
+          {
+            path.push_back(prev_p);
+            prev_p.locX += itvX;  
+            prev_p.locZ += itvZ;  
   
-  return path;
+          }
+        prev_p = setPoint[i];  
+      }
+      //add the last elem
+      path.push_back(setPoint[setPoint.size()-1]);
+    }
+  
+    
+    return path;
 }
 
 
@@ -126,7 +134,7 @@ Slave::Slave() {
 
   mode = STOP;
   orient = NORTH;
-  path = generatePath({{0,5},{12,5},{12,14},{19,14},{19,9},{0,9}});
+  path = generatePath({{0,5},{8,5},{8,9},{0,9},{0,6}},10);
    
   emitter = getEmitter("emitter");
   emitter->setChannel(1);

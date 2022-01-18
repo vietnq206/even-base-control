@@ -7,29 +7,36 @@
 
 #include "RobotControl.hpp"
 
-std::vector<point> generatePath(std::vector<point> setPoint){
+std::vector<point> generatePath(std::vector<point> setPoint, int freq){
 
     std::vector<point> path;
     point prev_p;
     int itvX, itvZ;
-    prev_p = setPoint[0];
     
-    for (int i=1;i<setPoint.size();++i)
+    
+    for ( int idx = 0; idx < freq; idx ++)
+    
     {
-      setPoint[i].locX == prev_p.locX ? itvX = 0 :  itvX = int((setPoint[i].locX - prev_p.locX)/abs(setPoint[i].locX - prev_p.locX));
-      setPoint[i].locZ == prev_p.locZ ? itvZ = 0 :  itvZ = int((setPoint[i].locZ - prev_p.locZ)/abs(setPoint[i].locZ - prev_p.locZ));
-        
-      while(!(prev_p == setPoint[i]))
-        {
-          path.push_back(prev_p);
-          prev_p.locX += itvX;  
-          prev_p.locZ += itvZ;  
-
-        }
-      prev_p = setPoint[i];  
+            prev_p = setPoint[0];
+      
+      for (int i=1;i<setPoint.size();++i)
+      {
+        setPoint[i].locX == prev_p.locX ? itvX = 0 :  itvX = int((setPoint[i].locX - prev_p.locX)/abs(setPoint[i].locX - prev_p.locX));
+        setPoint[i].locZ == prev_p.locZ ? itvZ = 0 :  itvZ = int((setPoint[i].locZ - prev_p.locZ)/abs(setPoint[i].locZ - prev_p.locZ));
+          
+        while(!(prev_p == setPoint[i]))
+          {
+            path.push_back(prev_p);
+            prev_p.locX += itvX;  
+            prev_p.locZ += itvZ;  
+  
+          }
+        prev_p = setPoint[i];  
+      }
+      //add the last elem
+      path.push_back(setPoint[setPoint.size()-1]);
     }
-    //add the last elem
-    path.push_back(setPoint[setPoint.size()-1]);
+  
     
     return path;
 }
@@ -37,15 +44,15 @@ int main(int argc, char **argv) {
   // create the Robot instance. 
   int numrobot = 3;
   std::vector<std::vector<point>> seqPoint(numrobot);
-  seqPoint[0] = {{2,0},{2,10},{16,10},{16,19},{18,19},{18,7},{4,7},{4,0}};
-  seqPoint[1] = {{0,2},{8,2},{8,15},{19,15},{19,17},{4,17},{4,3},{0,3}};
-  seqPoint[2] = {{0,5},{12,5},{12,14},{19,14},{19,9},{0,9}};
+  seqPoint[0] = {{2,0},{2,10},{6,10},{6,4},{4,4},{4,0},{3,0}};
+  seqPoint[1] = {{0,2},{10,2},{10,7},{0,7},{0,3}};
+  seqPoint[2] = {{0,5},{8,5},{8,9},{0,9},{0,6}};
 
   std::vector<std::vector<point>> path;
 
 
   for( int i =0; i < numrobot ; ++i){
-    path.push_back(generatePath(seqPoint[i]));
+    path.push_back(generatePath(seqPoint[i],10));
 
   }
 
