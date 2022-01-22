@@ -6,36 +6,20 @@
 #include <webots/Keyboard.hpp>
 #include <webots/Node.hpp>
 
-#include <stdlib.h>
-#include <cstring>
-#include <iostream>
-#include <math.h>
-#include <string>
-#include <vector>
+
 #include <webots/Robot.hpp>
 #include <webots/Supervisor.hpp>
 
+#include "/home/mice/PWR/Event-Base/even-base-control/Webot_source/controllers/lib.hpp"
 
 
 using namespace webots;
-#define TIME_STEP 32
-#define SIZE_X 20
-#define SIZE_Y 20
+
 
 // You may need to add webots include files such as
 // <webots/DistanceSensor.hpp>, <webots/Motor.hpp>, etc.
 // and/or to add some other includes
 
-
-struct point{
-    int locX;
-    int locZ;
-};
-bool operator==(const point& p1, const point& p2 )
-{
-  if ( p1.locX == p2.locX && p1.locZ == p2.locZ) return true;
-  else return false;
-}
 
 
 

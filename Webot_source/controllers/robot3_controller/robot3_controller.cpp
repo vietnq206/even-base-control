@@ -20,22 +20,13 @@
 #include <webots/utils/AnsiCodes.hpp>
 #include <webots/InertialUnit.hpp>
 
-#include <cstring>
-#include <algorithm>
-#include <iostream>
-#include <limits>
-#include <string>
-#include <math.h>
-#include <vector>
-#include <queue>
+#include "/home/mice/PWR/Event-Base/even-base-control/Webot_source/controllers/lib.hpp"
+
 
 // All the webots classes are defined in the "webots" namespace
 using namespace std;
 using namespace webots; 
-#define MAX_SPEED 3
-
-
-#define TIME_STEP 32
+ 
 #define Dwth 135
 #define Dwth_wall 150
 
@@ -48,51 +39,10 @@ using namespace webots;
 
 static const double maxSpeed = 10.0;
 
-struct point{
-    int locX;
-    int locZ;
-};
-bool operator==(const point& p1, const point& p2 )
-{
-  if ( p1.locX == p2.locX && p1.locZ == p2.locZ) return true;
-  else return false;
-}
+ 
 
 inline int ch2int(char c) { return int(c)-48; }
-std::vector<point> generatePath(std::vector<point> setPoint, int freq){
-
-    std::vector<point> path;
-    point prev_p;
-    int itvX, itvZ;
-    
-    
-    for ( int idx = 0; idx < freq; idx ++)
-    
-    {
-            prev_p = setPoint[0];
-      
-      for (int i=1;i<setPoint.size();++i)
-      {
-        setPoint[i].locX == prev_p.locX ? itvX = 0 :  itvX = int((setPoint[i].locX - prev_p.locX)/abs(setPoint[i].locX - prev_p.locX));
-        setPoint[i].locZ == prev_p.locZ ? itvZ = 0 :  itvZ = int((setPoint[i].locZ - prev_p.locZ)/abs(setPoint[i].locZ - prev_p.locZ));
-          
-        while(!(prev_p == setPoint[i]))
-          {
-            path.push_back(prev_p);
-            prev_p.locX += itvX;  
-            prev_p.locZ += itvZ;  
-  
-          }
-        prev_p = setPoint[i];  
-      }
-      //add the last elem
-      path.push_back(setPoint[setPoint.size()-1]);
-    }
-  
-    
-    return path;
-}
-
+ 
 
 class Slave : public Robot {
 public:
@@ -134,7 +84,8 @@ Slave::Slave() {
 
   mode = STOP;
   orient = NORTH;
-  path = generatePath({{0,5},{8,5},{8,9},{0,9},{0,6}},10);
+  std::vector<std::vector<point>> seqPoint = getSetPath();
+  path = generatePath(seqPoint[2],10);
    
   emitter = getEmitter("emitter");
   emitter->setChannel(1);
