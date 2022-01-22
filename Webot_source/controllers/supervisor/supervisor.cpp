@@ -10,7 +10,7 @@
 
 int main(int argc, char **argv) {
   // create the Robot instance. 
-  int numrobot = 3;
+ 
   std::vector<std::vector<point>> seqPoint = getSetPath();
   // seqPoint[0] = {{2,0},{2,10},{6,10},{6,4},{4,4},{4,0},{3,0}};
   // seqPoint[1] = {{0,2},{10,2},{10,7},{0,7},{0,3}};
@@ -18,14 +18,24 @@ int main(int argc, char **argv) {
 
   std::vector<std::vector<point>> path;
 
+  std::string tmp;
+  std::vector<std::string> rbSet;
+  for ( int idx = 0;idx<NUM_ROBOT;idx++)
+  {
+      tmp.assign("robot_");
+      tmp.append(std::to_string(idx+1));
+      rbSet.push_back(tmp);
+  }
+      
 
-  for( int i =0; i < numrobot ; ++i){
+
+  for( int i =0; i < NUM_ROBOT ; ++i){
     path.push_back(generatePath(seqPoint[i],10));
 
   }
 
  
-  std::vector<std::string> rbSet = {"robot_1","robot_2","robot_3"};
+  
    
   Driver *controller = new Driver(rbSet,path);
   controller->runSim();

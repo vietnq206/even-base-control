@@ -214,17 +214,20 @@ void Driver::runSim(){
   std::vector<int> rbIndex;
   std::vector<int> ackMove;
 
+  std::string messOut(""); //starting signal 
+
   for ( int i = 0; i< numRobot; ++i )
   {
     ackAskRobot.push_back('0');
     rbDoneEvent.push_back(false);
     rbIndex.push_back(1);
     ackMove.push_back(0);
+    messOut.append("#11");
   }
 
   std::cout<<"num Robot:"<<numRobot<<std::endl;
    
-  std::string messOut("#11#11#11"); //starting signal 
+  
   std::string messOut_prev("");
   std::string messIn("");
 
