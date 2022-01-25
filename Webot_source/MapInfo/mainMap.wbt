@@ -3,8 +3,8 @@ WorldInfo {
   coordinateSystem "NUE"
 }
 Viewpoint {
-  orientation -0.0915207700574915 0.9473360989903672 0.30688477348639653 3.0848176113290817
-  position 0.45167560288756403 1.1623385752212936 -2.008631516981703
+  orientation 0.11972715864401437 -0.9403202182170532 -0.31853303548496253 3.3529087272885167
+  position 0.8198166174743994 1.2529057791739944 -2.1427650243255907
 }
 TexturedBackground {
 }
@@ -15,6 +15,17 @@ RectangleArena {
   floorAppearance Parquetry {
     type "light strip"
   }
+}
+RectangleArena {
+  translation 1 -0.02 -1
+  name "rectangle arena(1)"
+  floorSize 2.3 2.3
+  floorAppearance Parquetry {
+    type "light strip"
+  }
+}
+TexturedBackgroundLight {
+  texture "dawn_cloudy_empty"
 }
 DEF robot_1 E-puck {
   translation 0.8 0 -1
@@ -59,6 +70,138 @@ DEF robot_2 E-puck {
     }
   ]
 }
+DEF robot_3 E-puck {
+  translation 1 -6.39682e-05 -0.5
+  rotation 0 1 0 3.141592653589793
+  name "robot_3"
+  controller "robot3_controller"
+  receiver_channel 0
+  battery [
+    0
+  ]
+  turretSlot [
+    InertialUnit {
+      name "imu"
+    }
+  ]
+  groundSensorsSlot [
+    Camera {
+      name "camera(1)"
+    }
+    GPS {
+    }
+  ]
+}
+DEF robot_4 E-puck {
+  translation 0.4 -6.39682e-05 -1
+  rotation 0 1 0 3.141592653589793
+  name "robot_4"
+  controller "robot4_controller"
+  receiver_channel 0
+  battery [
+    0
+  ]
+  turretSlot [
+    InertialUnit {
+      name "imu"
+    }
+  ]
+  groundSensorsSlot [
+    Camera {
+      name "camera(1)"
+    }
+    GPS {
+    }
+  ]
+}
+DEF robot_5 E-puck {
+  translation 0 -6.39682e-05 -0.6
+  rotation 0 1 0 3.141592653589793
+  name "robot_5"
+  controller "robot5_controller"
+  receiver_channel 0
+  battery [
+    0
+  ]
+  turretSlot [
+    InertialUnit {
+      name "imu"
+    }
+  ]
+  groundSensorsSlot [
+    Camera {
+      name "camera(1)"
+    }
+    GPS {
+    }
+  ]
+}
+DEF robot_6 E-puck {
+  translation 0.6 -6.39682e-05 0
+  rotation 0 1 0 -5.307179586466759e-06
+  name "robot_6"
+  controller "robot6_controller"
+  receiver_channel 0
+  battery [
+    0
+  ]
+  turretSlot [
+    InertialUnit {
+      name "imu"
+    }
+  ]
+  groundSensorsSlot [
+    Camera {
+      name "camera(1)"
+    }
+    GPS {
+    }
+  ]
+}
+DEF robot_7 E-puck {
+  translation 0 -6.39682e-05 -0.2
+  rotation 0 1 0 3.141592653589793
+  name "robot_7"
+  controller "robot7_controller"
+  receiver_channel 0
+  battery [
+    0
+  ]
+  turretSlot [
+    InertialUnit {
+      name "imu"
+    }
+  ]
+  groundSensorsSlot [
+    Camera {
+      name "camera(1)"
+    }
+    GPS {
+    }
+  ]
+}
+DEF robot_8 E-puck {
+  translation 0.3 -6.39682e-05 -1
+  rotation 0 1 0 3.141592653589793
+  name "robot_8"
+  controller "robot8_controller"
+  receiver_channel 0
+  battery [
+    0
+  ]
+  turretSlot [
+    InertialUnit {
+      name "imu"
+    }
+  ]
+  groundSensorsSlot [
+    Camera {
+      name "camera(1)"
+    }
+    GPS {
+    }
+  ]
+}
 Robot {
   children [
     Receiver {
@@ -71,20 +214,4 @@ Robot {
   name "supervisor"
   controller "supervisor"
   supervisor TRUE
-}
-LegoInterval {
-  translation 0.8 0.13 -1
-  name "Start1"
-}
-LegoInterval {
-  translation 1 0.13 -0.8
-  name "Start2"
-}
-LegoInterval {
-  translation -1 0.13 0.6
-  name "End_1"
-}
-LegoInterval {
-  translation -0.6 0.13 1
-  name "End_2"
 }
